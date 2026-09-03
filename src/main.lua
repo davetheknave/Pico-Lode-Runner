@@ -191,6 +191,21 @@ function _update()
 
 	-- adjust movement
 	-- the game nudges the player towards the center of the axis they are walking on
+	if dx != 0 and dy != 0 then
+		printh("Trying to move diagonally")
+	elseif dx != 0 then
+		if p1.y % 8 >= 4 then
+			dy = min(p1.y % 8, SPEED)
+		else
+			dy = max(-(p1.y % 8), -SPEED)
+		end
+	elseif dy != 0 or p1.state == PLAYER_FALLING then
+		if p1.x % 8 >= 4 then
+			dx = min(p1.x % 8, SPEED)
+		else
+			dx = max(-(p1.x % 8), -SPEED)
+		end
+	end
 	
 	-- Resolve movement
 	p1.x += dx
