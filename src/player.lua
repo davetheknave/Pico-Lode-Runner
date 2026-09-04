@@ -24,9 +24,6 @@ function Player:get_input()
 			elseif self.down_allowed and btn(3) then -- down
 				self.dx = 0
 				self.dy = SPEED
-				if self.state == STATE_SHIMMYING then
-					self.state = STATE_FALLING
-				end
 			end
 		end
 
