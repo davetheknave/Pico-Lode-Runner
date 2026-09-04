@@ -1,24 +1,26 @@
 -- settings
 --[[$const]] SPEED = 1
 --[[$const]] GRAVITY = SPEED
+--[[$const]] ANIMATION_RATE = 4
 -- tiles/sprites
 --[[$const]] GOLD_TILE = 24
 --[[$const]] PLAYER_START_TILE = 25
 --[[$const]] ENEMY_SPAWN_TILE = 26
 --[[$const]] LADDER_TILE = 20
+--[[$const]] SHIMMY_TILE = 22
 -- flags
 --[[$const]] COLLISION_FLAG = 0
 -- sounds
 --[[$const]] GOLD_SOUND = 63
 
 -- player states
---[[$const]] PLAYER_STANDING = 0
---[[$const]] PLAYER_WALKING = 1
---[[$const]] PLAYER_CLIMBING = 2
+--[[$const]] PLAYER_STANDING = 1
+--[[$const]] PLAYER_WALKING = 2
 --[[$const]] PLAYER_SHOOTING = 3
---[[$const]] PLAYER_SHIMMYING = 4
---[[$const]] PLAYER_FALLING = 5
---[[$const]] PLAYER_DYING = 6
+--[[$const]] PLAYER_CLIMBING = 4
+--[[$const]] PLAYER_SHIMMYING = 5
+--[[$const]] PLAYER_FALLING = 6
+--[[$const]] PLAYER_DYING = 7
 
 --player
 local p1=
@@ -27,6 +29,18 @@ local p1=
 	y=16,
 	state=0,
 	facing_left=false,
+	animation=PLAYER_STANDING,
+	frame=0,
+}
+
+player_animations = {
+	{2,3,4},
+	{1},
+	{5},
+	{6,7},
+	{8,9},
+	{10},
+	{10,11,12}
 }
 
 function p1:pos()
@@ -38,6 +52,7 @@ function round(value)
 end
 
 gold = 0
+frame = 0
 
 function place_player()
 	for y=1,127 do
@@ -65,6 +80,7 @@ end
 function _init()
 	place_player()
 	count_remaining_gold()
+	set_palette()
 end
 
 function get_tile(pos)
@@ -148,6 +164,10 @@ function _update()
 	if fget(get_ceiling(p1:pos()),COLLISION_FLAG) then
 		up_allowed = false
 	end
+	if player_tile == SHIMMY_TILE then
+		up_allowed = false
+		p1.state = PLAYER_SHIMMYING
+	end
 
 	local left_allowed = not fget(get_left(p1:pos()),COLLISION_FLAG)
 	local right_allowed = not fget(get_right(p1:pos()),COLLISION_FLAG)
@@ -225,11 +245,38 @@ function _update()
 	if next_tile == GOLD_TILE then
 		get_gold(p1:pos())
 	end
+
+	-- animation
+	frame += 1
+	if frame % ANIMATION_RATE == 0 then
+		p1.frame += 1
+	end
+end
+
+function get_sprite(frame, animations, state)
+	local loop = animations[state]
+	return loop[frame % (#loop)+1]
+end
+
+function set_palette()
+	poke(0x5f2e, 1)
+	pal({[0]=
+	-16,7,10,9,		-- Black, white, gold, gold-shade
+	15,2,14,9,		-- Skin, Helmet, Shirt, Pants
+	6,-11,-10,			-- RSkin, RHelmet, RShirt
+	-12, -10,		-- brick1, brick2
+	-- -13, 3,		-- brick1, brick2
+	-15,-14,1		-- bg1, bg2, bg3
+},1)
 end
 
 function _draw()
 	cls()
+	palt(15,false)
+	map(112,048,0,0,128,128)
+	palt(15,true)
+	palt(0, false)
 	map(0,0,0,0,128,128,128)
-	spr(1,p1.x,p1.y,1,1,p1.facing_left)
+	local sprite = get_sprite(p1.frame, player_animations, p1.state)
+	spr(sprite,p1.x,p1.y,1,1,p1.facing_left)
 end
-
