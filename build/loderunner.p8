@@ -1,91 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 43
 __lua__
--- settings
---[[$const]] SPEED = 1
---[[$const]] GRAVITY = SPEED
---[[$const]] ANIMATION_RATE = 4
--- tiles/sprites
---[[$const]] GOLD_TILE = 24
---[[$const]] PLAYER_START_TILE = 25
---[[$const]] ENEMY_SPAWN_TILE = 26
---[[$const]] LADDER_TILE = 20
---[[$const]] SHIMMY_TILE = 22
--- flags
---[[$const]] COLLISION_FLAG = 0
--- sounds
---[[$const]] GOLD_SOUND = 63
-
--- player states
---[[$const]] PLAYER_STANDING = 1
---[[$const]] PLAYER_WALKING = 2
---[[$const]] PLAYER_SHOOTING = 3
---[[$const]] PLAYER_CLIMBING = 4
---[[$const]] PLAYER_SHIMMYING = 5
---[[$const]] PLAYER_FALLING = 6
---[[$const]] PLAYER_DYING = 7
-
---player
-local p1=
-{
-	x=71,
-	y=16,
-	state=0,
-	facing_left=false,
-	animation=PLAYER_STANDING,
-	frame=0,
-}
-
-player_animations = {
-	{2,3,4},
-	{1},
-	{5},
-	{6,7},
-	{8,9},
-	{10},
-	{10,11,12}
-}
-
-function p1:pos()
-	return {x=self.x/8, y=self.y/8}
-end
-
-function round(value)
-	return value >= 0 and flr(value + 0.5) or ceil(value - 0.5)
-end
-
-gold = 0
-frame = 0
-
-function place_player()
-	for y=1,127 do
-		for x=1,127 do
-			local maptile = mget(x,y)
-			if maptile == PLAYER_START_TILE then
-				p1.x = x * 8
-				p1.y = y * 8
-				return
-			end
-		end
-	end
-end
-
-function count_remaining_gold()
-	for y=1,127 do
-		for x=1,127 do
-			if mget(x,y) == GOLD_TILE then
-				gold += 1
-			end
-		end
-	end
-end
-
-function _init()
-	place_player()
-	count_remaining_gold()
-	set_palette()
-end
-
+package={loaded={},_c={}}
+package._c["utilities"]=function()
 function get_tile(pos)
 	return mget(
 		round(pos.x),
@@ -120,6 +37,323 @@ function get_right(pos)
 		round(pos.y)
 	)
 end
+end
+package._c["character"]=function()
+-- character states
+--[[$const]] STATE_STANDING = 1
+--[[$const]] STATE_WALKING = 2
+--[[$const]] STATE_SHOOTING = 3
+--[[$const]] STATE_CLIMBING = 4
+--[[$const]] STATE_SHIMMYING = 5
+--[[$const]] STATE_FALLING = 6
+--[[$const]] STATE_DYING = 7
+
+local player_animations = {
+	{1,2,3},
+	{0},
+	{4},
+	{5,6},
+	{7,8},
+	{9},
+	{9,10,11}
+}
+
+Character =
+{
+    x=0,
+    y=0,
+    dx=0,
+    dy=0,
+    state=STATE_STANDING,
+    facing_left=false,
+    animation=STATE_STANDING,
+    frame=0,
+    sprite=1, -- 1 for player, 49 for enemy
+    down_allowed=false,
+    up_allowed=false,
+    left_allowed=false,
+    right_allowed=false,
+}
+Character.__index = Character
+
+function Character:new()
+    local instance = setmetatable({},self)
+    return instance
+end
+
+function Character:pos()
+    return {x=self.x/8, y=self.y/8}
+end
+
+function Character:move_to(x,y)
+    self.x = x
+    self.y = y
+end
+
+function shoot()
+
+end
+
+function Character:get_sprite()
+	local loop = player_animations[self.state]
+	return loop[self.frame % (#loop)+1] + self.sprite
+end
+
+function Character:draw()
+	local sprite = self:get_sprite()
+	spr(sprite,self.x,self.y,1,1,self.facing_left)
+end
+
+function Character:check_mobility()
+    -- Get surroundings and determine what movement is possible
+    local floor = get_floor(self:pos())
+    local grounded = fget(floor, COLLISION_FLAG)
+	local player_tile = get_tile(self:pos())
+	local touching_ladder = player_tile == LADDER_TILE or floor == LADDER_TILE
+
+	self.down_allowed = not grounded
+	
+	if floor == LADDER_TILE or grounded then
+		self.state = STATE_STANDING
+	else
+		self.state = STATE_FALLING
+	end
+
+	self.up_allowed = false
+	if touching_ladder then
+		if not grounded then
+			self.state = STATE_CLIMBING
+		end
+		if not ((self.y % 8 == 0) and not (player_tile == LADDER_TILE)) then
+			self.up_allowed = true
+		else
+			self.state = STATE_STANDING
+		end
+	end
+	if fget(get_ceiling(self:pos()),COLLISION_FLAG) then
+		self.up_allowed = false
+	end
+	if player_tile == SHIMMY_TILE and self.y % 8 == 0 then
+		self.up_allowed = false
+		self.state = STATE_SHIMMYING
+	end
+
+	self.left_allowed = not fget(get_left(self:pos()),COLLISION_FLAG)
+	self.right_allowed = not fget(get_right(self:pos()),COLLISION_FLAG)
+end
+
+function Character:get_input()
+    printh("This shouldn't run")
+end
+
+function Character:update_movement()
+	-- the game nudges the player towards the center of the axis they are walking on
+	if self.dx != 0 and self.dy != 0 then
+		printh("Trying to move diagonally")
+	elseif self.dx != 0 then
+		if self.y % 8 >= 4 then
+			self.dy = min(self.y % 8, SPEED)
+		else
+			self.dy = max(-(self.y % 8), -SPEED)
+        end
+	elseif self.dy != 0 or self.state == STATE_FALLING then
+		if self.x % 8 >= 4 then
+			self.dx = min(self.x % 8, SPEED)
+		else
+			self.dx = max(-(self.x % 8), -SPEED)
+		end
+	end
+	
+	-- Resolve movement
+	self.x += self.dx
+	self.y += self.dy
+
+	if self.state == STATE_FALLING then
+		self.y+=GRAVITY
+	end
+	floor = get_floor(self:pos())
+	grounded = fget(floor, COLLISION_FLAG)
+	if grounded then
+		self.y = flr((self.y)/8)*8
+	end
+end
+
+function Character:update_animation()
+	if frame % ANIMATION_RATE == 0 then
+		self.frame += 1
+	end
+end
+
+function Character:update()
+    self:check_mobility()
+    self:get_input()
+    self:update_movement()
+    self:update_animation()
+end
+end
+package._c["player"]=function()
+Player = {}
+Player.__index = Player
+setmetatable(Player, {__index=Character})
+
+function Player:get_input()
+    self.dx = 0
+    self.dy = 0
+	if self.state != STATE_FALLING and self.state != STATE_SHOOTING and self.state != STATE_DYING then
+		if not (btn(0) and btn(1)) then
+			if self.left_allowed and btn(0) then -- left
+				self.facing_left = true
+				self.dx = -SPEED
+			elseif self.right_allowed and btn(1) then --right
+				self.dx = SPEED
+				self.facing_left = false
+			end
+		end
+
+		-- can't move vertical and horizontal. vertical has priority
+		if not (btn(2) and btn(3)) then
+			if self.up_allowed and btn(2) then -- up
+				self.dx = 0
+				self.dy = -SPEED
+			elseif self.down_allowed and btn(3) then -- down
+				self.dx = 0
+				self.dy = SPEED
+				if self.state == STATE_SHIMMYING then
+					self.state = STATE_FALLING
+				end
+			end
+		end
+
+		if btn(4) then -- O
+			shoot()
+			self.dx = 0
+			self.dy = 0
+		end
+		if btn(5) then -- X
+			shoot()
+			self.dx = 0
+			self.dy = 0
+		end
+	end
+end
+
+function Player:update()
+    self:check_mobility()
+    self:get_input()
+    self:update_movement()
+	-- game logic
+	local next_tile = get_tile(self:pos())
+	if next_tile == GOLD_TILE then
+		get_gold(self:pos())
+	end
+    self:update_animation()
+end
+
+
+function Player:new()
+    local instance = Character:new()
+    setmetatable(instance,self)
+    instance.sprite = 1
+    return instance
+end
+end
+package._c["enemy"]=function()
+
+Enemy = {}
+Enemy.__index = Enemy
+setmetatable(Enemy, {__index=Character})
+
+function Enemy:new()
+    local instance = Character:new()
+    setmetatable(instance,self)
+    instance.sprite = 49
+    return instance
+end
+
+function Enemy:get_input()
+end
+end
+function require(p)
+local l=package.loaded
+if (l[p]==nil) l[p]=package._c[p]()
+if (l[p]==nil) l[p]=true
+return l[p]
+end
+-- settings
+--[[$const]] SPEED = 1
+--[[$const]] GRAVITY = SPEED
+--[[$const]] ANIMATION_RATE = 4
+-- tiles/sprites
+--[[$const]] GOLD_TILE = 24
+--[[$const]] PLAYER_START_TILE = 25
+--[[$const]] ENEMY_SPAWN_TILE = 26
+--[[$const]] LADDER_TILE = 20
+--[[$const]] SHIMMY_TILE = 22
+-- flags
+--[[$const]] COLLISION_FLAG = 0
+-- sounds
+--[[$const]] GOLD_SOUND = 63
+
+require("utilities")
+require("character")
+require("player")
+require("enemy")
+
+local player = Player:new()
+local enemies = {}
+
+function round(value)
+	return value >= 0 and flr(value + 0.5) or ceil(value - 0.5)
+end
+
+gold = 0
+frame = 0
+
+function place_player()
+	for y=1,127 do
+		for x=1,127 do
+			local maptile = mget(x,y)
+			if maptile == PLAYER_START_TILE then
+				player:move_to(x*8, y*8)
+				return
+			end
+		end
+	end
+end
+
+function place_enemies()
+	for y=1,127 do
+		for x=1,127 do
+			local maptile = mget(x,y)
+			if maptile == ENEMY_SPAWN_TILE then
+				local enemy = Enemy:new()
+				enemy:move_to(x*8,y*8)
+				enemies[#enemies+1] = enemy
+				return
+			end
+		end
+	end
+end
+
+
+
+function count_remaining_gold()
+	for y=1,127 do
+		for x=1,127 do
+			if mget(x,y) == GOLD_TILE then
+				gold += 1
+			end
+		end
+	end
+end
+
+function _init()
+	place_player()
+	place_enemies()
+	count_remaining_gold()
+	set_palette()
+end
+
 
 function win()
 	printh("You win")
@@ -134,134 +368,13 @@ function get_gold(pos)
 	end
 end
 
-function shoot()
-
-end
-
 function _update()
-	-- Figure out player's surroundings
-	local floor = get_floor(p1:pos())
-	local grounded = fget(floor, COLLISION_FLAG)
-	local player_tile = get_tile(p1:pos())
-	local touching_ladder = player_tile == LADDER_TILE or floor == LADDER_TILE
-
-	local down_allowed = not grounded
-	
-	if floor == LADDER_TILE or grounded then
-		p1.state = PLAYER_STANDING
-	else
-		p1.state = PLAYER_FALLING
-	end
-
-	local up_allowed = false
-	if touching_ladder then
-		if not grounded then
-			p1.state = PLAYER_CLIMBING
-		end
-		if not ((p1.y % 8 == 0) and not (player_tile == LADDER_TILE)) then
-			up_allowed = true
-		else
-			p1.state = PLAYER_STANDING
-		end
-	end
-	if fget(get_ceiling(p1:pos()),COLLISION_FLAG) then
-		up_allowed = false
-	end
-	if player_tile == SHIMMY_TILE and p1.y % 8 == 0 then
-		up_allowed = false
-		p1.state = PLAYER_SHIMMYING
-	end
-
-	local left_allowed = not fget(get_left(p1:pos()),COLLISION_FLAG)
-	local right_allowed = not fget(get_right(p1:pos()),COLLISION_FLAG)
-
-	-- Check Player input
-	local dx = 0
-	local dy = 0
-	if p1.state != PLAYER_FALLING and p1.state != PLAYER_SHOOTING and p1.state != PLAYER_DYING then
-		if not (btn(0) and btn(1)) then
-			if left_allowed and btn(0) then -- left
-				p1.facing_left = true
-				dx = -SPEED
-			elseif right_allowed and btn(1) then --right
-				dx = SPEED
-				p1.facing_left = false
-			end
-		end
-
-		-- can't move vertical and horizontal. vertical has priority
-		if not (btn(2) and btn(3)) then
-			if up_allowed and btn(2) then -- up
-				dx = 0
-				dy = -SPEED
-			elseif down_allowed and btn(3) then -- down
-				dx = 0
-				dy = SPEED
-				if p1.state == PLAYER_SHIMMYING then
-					p1.state = PLAYER_FALLING
-				end
-			end
-		end
-
-		if btn(4) then -- O
-			shoot()
-			dx = 0
-			dy = 0
-		end
-		if btn(5) then -- X
-			shoot()
-			dx = 0
-			dy = 0
-		end
-	end
-
-	-- adjust movement
-	-- the game nudges the player towards the center of the axis they are walking on
-	if dx != 0 and dy != 0 then
-		printh("Trying to move diagonally")
-	elseif dx != 0 then
-		if p1.y % 8 >= 4 then
-			dy = min(p1.y % 8, SPEED)
-		else
-			dy = max(-(p1.y % 8), -SPEED)
-		end
-	elseif dy != 0 or p1.state == PLAYER_FALLING then
-		if p1.x % 8 >= 4 then
-			dx = min(p1.x % 8, SPEED)
-		else
-			dx = max(-(p1.x % 8), -SPEED)
-		end
-	end
-	
-	-- Resolve movement
-	p1.x += dx
-	p1.y += dy
-
-	if p1.state == PLAYER_FALLING then
-		p1.y+=GRAVITY
-	end
-	floor = get_floor(p1:pos())
-	grounded = fget(floor, COLLISION_FLAG)
-	if grounded then
-		p1.y = flr((p1.y)/8)*8
-	end
-
-	-- game logic
-	local next_tile = get_tile(p1:pos())
-	if next_tile == GOLD_TILE then
-		get_gold(p1:pos())
-	end
-
-	-- animation
 	frame += 1
-	if frame % ANIMATION_RATE == 0 then
-		p1.frame += 1
+	player:update()
+	for e in all(enemies) do
+		e:update()
 	end
-end
 
-function get_sprite(frame, animations, state)
-	local loop = animations[state]
-	return loop[frame % (#loop)+1]
 end
 
 function set_palette()
@@ -283,8 +396,10 @@ function _draw()
 	palt(15,true)
 	palt(0, false)
 	map(0,0,0,0,128,128,128)
-	local sprite = get_sprite(p1.frame, player_animations, p1.state)
-	spr(sprite,p1.x,p1.y,1,1,p1.facing_left)
+	player:draw()
+	for e in all(enemies) do
+		e:draw()
+	end
 end
 __gfx__
 000000001f5555ff1f5555ff1f5555ff1f5555ff1f5555ff1f5555f11f5555f1ffffffffffffffff1f5555f1ff5555ffffff5fff000000000000000000000000
@@ -311,14 +426,14 @@ __gfx__
 00000000bcbbbbbbbcbbbbbbbcbbbbbbbcfffffbffffffffffffffff000000000000000000000000000000000000000000000000000000000000000000000000
 00000000bcbbbbbbbcbbbbbbbcbbbbbbbcbbfbbbbffffffbffffffff000000000000000000000000000000000000000000000000000000000000000000000000
 00000000bcbbbbbbbcbbbbbbbcbbbbbbbcbbbbbbbcbbbbbbfffbffff000000000000000000000000000000000000000000000000000000000000000000000000
-00000000ffaa99ff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000fa99999f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000fa9981ff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000f99988ff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000faaaaaaf0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000f1aaaa1f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000f199991f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000ff0000ff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000ffaa99ffffaa99ffffaa99ffffaa99ffffaa99ffff999affff999affffffffffffffffffff99aaffff9999ffffff9fff000000000000000000000000
+00000000fa99999ffa99999ffa99999ffa99999ffa99999ff99999aff99999aff0011f9f00ff119ff99999afff99999fff9f89ff000000000000000000000000
+00000000fa9981fffa9981fffa9981fffa9981fffa9981fff99999aff99999aff00a889900faa899f918819ff918f19fff18ff9f000000000000000000000000
+00000000f99988fff99988fff99988fff99988fff99988fff999999ff999999ff99a8199999a8199198888911f8008f1fffffff1000000000000000000000000
+00000000faaaaaaf11aaaa1fffaaafffffaaaffffaaaaaaffaaaaaaf1aaaaaa1f9aa999af9aa999afaaaaaaffaa00afffaff0aff000000000000000000000000
+00000000f1aaaa1f11aa900ff11aafff0011affff1aaaaa1f09aaaf1ffaaaafffaaa999afaaa999affaaaaff0faafaf00fafffff000000000000000000000000
+00000000f199991ff099900ff1199fff091190fff19999f1000999ffff9999ffffaa9aaffffa9aaf00999900f0f999fff0ff9fff000000000000000000000000
+00000000ff0000fff00fffffff000fffffff000fff0000fffffff00fff0000ffffffffffffffffff00ffff00ffffffffffffffff000000000000000000000000
 dddedddeeeeeeeeefefefefeffffffffdededede3e3e3e3ef3f3f3f3ffffffffdddedddeeeeeeeeefefefefeffffffff00000000000000000000000000000000
 ededededeeeeeeeeefefefefffffffffedededede3e3e3e33f3f3f3fffffffffededededeeeeeeeeefefefefffffffff00000000000000000000000000000000
 dedddeddeeeeeeeefefefefeffffffffdededede3e3e3e3ef3f3f3f3ffffffffdedddeddeeeeeeeefefefefeffffffff00000000000000000000000000000000
@@ -421,20 +536,20 @@ __gff__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 1114161616161416161616161616161100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-11141a1100001400000000000000001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-1121211400001419181600001c21211100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+11141a1100001400000000160000001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1121211400001419181616161c21211100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 1118211400001421212100002118001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 1121211400001400000000212121001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 1118211400001400001800000000001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 112121212121211400212112181b001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-1121111811110014000000211321001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-1121210011110014000000000000001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1121111811110014141400211321001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1121210011110014141400141614001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1100000000000014001414141400001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 1100000000000014000000000000001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 1100000000000014000000000000001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-1100000000000014000000000000001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-1100000000000014000000000000001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-1100000000000014000000000000001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-1100000000000014000000000000001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1100000000000014000016001400001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1100000000000014000000001600001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1100000000000014000014000000001100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 1111111111111111111111111111111100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
 000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
