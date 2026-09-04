@@ -167,7 +167,7 @@ function _update()
 	if fget(get_ceiling(p1:pos()),COLLISION_FLAG) then
 		up_allowed = false
 	end
-	if player_tile == SHIMMY_TILE then
+	if player_tile == SHIMMY_TILE and p1.y % 8 == 0 then
 		up_allowed = false
 		p1.state = PLAYER_SHIMMYING
 	end
@@ -197,6 +197,9 @@ function _update()
 			elseif down_allowed and btn(3) then -- down
 				dx = 0
 				dy = SPEED
+				if p1.state == PLAYER_SHIMMYING then
+					p1.state = PLAYER_FALLING
+				end
 			end
 		end
 
