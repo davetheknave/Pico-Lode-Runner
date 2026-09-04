@@ -13,10 +13,10 @@
 -- sounds
 --[[$const]] GOLD_SOUND = 63
 
-require("utilities")
-require("character")
-require("player")
-require("enemy")
+#include utilities.lua
+#include character.lua
+#include player.lua
+#include enemy.lua
 
 local player = Player:new()
 local enemies = {}
