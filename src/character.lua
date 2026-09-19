@@ -10,57 +10,56 @@
 --[[$const]] SHOOT_DURATION = 0.5
 
 local player_animations = {
-	{1,2,3},
-	{0},
-	{4},
-	{5,6},
-	{7,8},
-	{9},
-	{9,10,11}
+	{ 1, 2, 3 },
+	{ 0 },
+	{ 4 },
+	{ 5, 6 },
+	{ 7, 8 },
+	{ 9 },
+	{ 9, 10, 11 }
 }
 
-Character =
-{
-    x=0,
-    y=0,
-    dx=0,
-    dy=0,
-    state=STATE_STANDING,
-    facing_left=false,
-    animation=STATE_STANDING,
-    frame=0,
-    sprite=1, -- 1 for player, 49 for enemy
-    down_allowed=false,
-    up_allowed=false,
-    left_allowed=false,
-    right_allowed=false,
-	shoot_left_allowed=false,
-	shoot_right_allowed=false,
+Character = {
+	x = 0,
+	y = 0,
+	dx = 0,
+	dy = 0,
+	state = STATE_STANDING,
+	facing_left = false,
+	animation = STATE_STANDING,
+	frame = 0,
+	sprite = 1, -- 1 for player, 49 for enemy
+	down_allowed = false,
+	up_allowed = false,
+	left_allowed = false,
+	right_allowed = false,
+	shoot_left_allowed = false,
+	shoot_right_allowed = false
 }
 Character.__index = Character
 
 function Character:new()
-    local instance = setmetatable({},self)
-    return instance
+	local instance = setmetatable({}, self)
+	return instance
 end
 
 function Character:pos()
-    return {x=self.x/8, y=self.y/8}
+	return { x = self.x / 8, y = self.y / 8 }
 end
 
-function Character:move_to(x,y)
-    self.x = x
-    self.y = y
+function Character:move_to(x, y)
+	self.x = x
+	self.y = y
 end
 
 function Character:get_sprite()
 	local loop = player_animations[self.state]
-	return loop[self.frame % (#loop)+1] + self.sprite
+	return loop[self.frame % #loop + 1] + self.sprite
 end
 
 function Character:draw()
 	local sprite = self:get_sprite()
-	spr(sprite,self.x,self.y,1,1,self.facing_left)
+	spr(sprite, self.x, self.y, 1, 1, self.facing_left)
 end
 
 function Character:check_mobility()
@@ -76,14 +75,14 @@ function Character:check_mobility()
 		self.up_allowed = false
 		return
 	end
-    -- Get surroundings and determine what movement is possible
-    local floor = get_floor(self:pos())
-    local grounded = fget(floor, COLLISION_FLAG)
+	-- Get surroundings and determine what movement is possible
+	local floor = get_floor(self:pos())
+	local grounded = fget(floor, COLLISION_FLAG)
 	local player_tile = get_tile(self:pos())
 	local touching_ladder = player_tile == LADDER_TILE or floor == LADDER_TILE
 
 	self.down_allowed = not grounded
-	
+
 	if floor == LADDER_TILE or grounded then
 		self.state = STATE_STANDING
 	else
@@ -101,7 +100,7 @@ function Character:check_mobility()
 			self.state = STATE_STANDING
 		end
 	end
-	if fget(get_ceiling(self:pos()),COLLISION_FLAG) then
+	if fget(get_ceiling(self:pos()), COLLISION_FLAG) then
 		self.up_allowed = false
 	end
 	if player_tile == SHIMMY_TILE and self.y % 8 == 0 then
@@ -110,17 +109,17 @@ function Character:check_mobility()
 	end
 	local left = get_left(self:pos())
 	local right = get_right(self:pos())
-	self.left_allowed = not fget(left,COLLISION_FLAG)
-	self.right_allowed = not fget(right,COLLISION_FLAG)
-	
-	local approx_left = mget(round(self:pos().x)-1,round(self:pos().y))
-	local approx_right = mget(round(self:pos().x)+1,round(self:pos().y))
+	self.left_allowed = not fget(left, COLLISION_FLAG)
+	self.right_allowed = not fget(right, COLLISION_FLAG)
+
+	local approx_left = mget(round(self:pos().x) - 1, round(self:pos().y))
+	local approx_right = mget(round(self:pos().x) + 1, round(self:pos().y))
 	self.shoot_left_allowed = get_floor_left(self:pos()) == BRICK_TILE and approx_left == 0
 	self.shoot_right_allowed = get_floor_right(self:pos()) == BRICK_TILE and approx_right == 0
 end
 
 function Character:get_input()
-    printh("This shouldn't run")
+	printh("This shouldn't run")
 end
 
 function Character:update_movement()
@@ -143,18 +142,18 @@ function Character:update_movement()
 			end
 		end
 	end
-	
+
 	-- Resolve movement
 	self.x += self.dx
 	self.y += self.dy
 
 	if self.state == STATE_FALLING then
-		self.y+=GRAVITY
+		self.y += GRAVITY
 	end
 	floor = get_floor(self:pos())
 	grounded = fget(floor, COLLISION_FLAG)
 	if grounded then
-		self.y = flr((self.y)/8)*8
+		self.y = flr(self.y / 8) * 8
 	end
 end
 
@@ -165,8 +164,8 @@ function Character:update_animation()
 end
 
 function Character:update()
-    self:check_mobility()
-    self:get_input()
-    self:update_movement()
-    self:update_animation()
+	self:check_mobility()
+	self:get_input()
+	self:update_movement()
+	self:update_animation()
 end

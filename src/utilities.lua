@@ -8,40 +8,40 @@ end
 function get_floor(pos)
 	return mget(
 		round(pos.x),
-		pos.y+1
+		pos.y + 1
 	)
 end
 
 function get_floor_left(pos)
 	return mget(
-		round(pos.x)-1,
-		pos.y+1
+		round(pos.x) - 1,
+		pos.y + 1
 	)
 end
 function get_floor_right(pos)
 	return mget(
-		round(pos.x)+1,
-		pos.y+1
+		round(pos.x) + 1,
+		pos.y + 1
 	)
 end
 
 function get_ceiling(pos)
 	return mget(
 		round(pos.x),
-		ceil(pos.y-1)
+		ceil(pos.y - 1)
 	)
 end
 
 function get_left(pos)
 	return mget(
-		ceil(pos.x-1),
+		ceil(pos.x - 1),
 		round(pos.y)
 	)
 end
 
 function get_right(pos)
 	return mget(
-		pos.x+1,
+		pos.x + 1,
 		round(pos.y)
 	)
 end
