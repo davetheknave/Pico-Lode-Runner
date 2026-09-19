@@ -27,13 +27,19 @@ function Player:get_input()
 			end
 		end
 
-		if btn(4) then -- O
-			shoot()
+		if self.shoot_left_allowed and btn(4) then -- O
+			self:shoot(true)
+			self.facing_left = true
+			self.state = STATE_SHOOTING
+			self.last_state_change = time()
 			self.dx = 0
 			self.dy = 0
 		end
-		if btn(5) then -- X
-			shoot()
+		if self.shoot_right_allowed and btn(5) then -- X
+			self:shoot(false)
+			self.facing_left = false
+			self.state = STATE_SHOOTING
+			self.last_state_change = time()
 			self.dx = 0
 			self.dy = 0
 		end

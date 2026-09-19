@@ -6,6 +6,8 @@
 --[[$const]] STATE_SHIMMYING = 5
 --[[$const]] STATE_FALLING = 6
 --[[$const]] STATE_DYING = 7
+-- Other constants
+--[[$const]] SHOOT_DURATION = 0.5
 
 local player_animations = {
 	{1,2,3},
@@ -32,6 +34,8 @@ Character =
     up_allowed=false,
     left_allowed=false,
     right_allowed=false,
+	shoot_left_allowed=false,
+	shoot_right_allowed=false,
 }
 Character.__index = Character
 
@@ -49,10 +53,6 @@ function Character:move_to(x,y)
     self.y = y
 end
 
-function shoot()
-
-end
-
 function Character:get_sprite()
 	local loop = player_animations[self.state]
 	return loop[self.frame % (#loop)+1] + self.sprite
@@ -64,6 +64,18 @@ function Character:draw()
 end
 
 function Character:check_mobility()
+	if self.state == STATE_SHOOTING then
+		if time() - self.last_state_change >= SHOOT_DURATION then
+			self.state = STATE_STANDING
+		end
+	end
+	if self.state == STATE_SHOOTING then
+		self.left_allowed = false
+		self.right_allowed = false
+		self.down_allowed = false
+		self.up_allowed = false
+		return
+	end
     -- Get surroundings and determine what movement is possible
     local floor = get_floor(self:pos())
     local grounded = fget(floor, COLLISION_FLAG)
@@ -96,9 +108,15 @@ function Character:check_mobility()
 		self.up_allowed = false
 		self.state = STATE_SHIMMYING
 	end
-
-	self.left_allowed = not fget(get_left(self:pos()),COLLISION_FLAG)
-	self.right_allowed = not fget(get_right(self:pos()),COLLISION_FLAG)
+	local left = get_left(self:pos())
+	local right = get_right(self:pos())
+	self.left_allowed = not fget(left,COLLISION_FLAG)
+	self.right_allowed = not fget(right,COLLISION_FLAG)
+	
+	local approx_left = mget(round(self:pos().x)-1,round(self:pos().y))
+	local approx_right = mget(round(self:pos().x)+1,round(self:pos().y))
+	self.shoot_left_allowed = get_floor_left(self:pos()) == BRICK_TILE and approx_left == 0
+	self.shoot_right_allowed = get_floor_right(self:pos()) == BRICK_TILE and approx_right == 0
 end
 
 function Character:get_input()
@@ -109,17 +127,20 @@ function Character:update_movement()
 	-- the game nudges the player towards the center of the axis they are walking on
 	if self.dx != 0 and self.dy != 0 then
 		printh("Trying to move diagonally")
-	elseif self.dx != 0 then
-		if self.y % 8 >= 4 then
-			self.dy = min(self.y % 8, SPEED)
-		else
-			self.dy = max(-(self.y % 8), -SPEED)
-        end
-	elseif self.dy != 0 or self.state == STATE_FALLING then
-		if self.x % 8 >= 4 then
-			self.dx = min(self.x % 8, SPEED)
-		else
-			self.dx = max(-(self.x % 8), -SPEED)
+	else
+		if self.dx != 0 or self.state == STATE_SHOOTING then
+			if self.y % 8 >= 4 then
+				self.dy = min(self.y % 8, SPEED)
+			else
+				self.dy = max(-(self.y % 8), -SPEED)
+			end
+		end
+		if self.dy != 0 or self.state == STATE_FALLING or self.state == STATE_SHOOTING then
+			if self.x % 8 >= 4 then
+				self.dx = min(self.x % 8, SPEED)
+			else
+				self.dx = max(-(self.x % 8), -SPEED)
+			end
 		end
 	end
 	

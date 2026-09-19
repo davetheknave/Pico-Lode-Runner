@@ -8,10 +8,16 @@
 --[[$const]] ENEMY_SPAWN_TILE = 26
 --[[$const]] LADDER_TILE = 20
 --[[$const]] SHIMMY_TILE = 22
+--[[$const]] BRICK_TILE = 33
+-- brick lifecycle
+--[[$const]] BRICK_END = 90
 -- flags
 --[[$const]] COLLISION_FLAG = 0
 -- sounds
 --[[$const]] GOLD_SOUND = 63
+--[[$const]] SHOOT_SOUND = 62
+--[[$const]] DIE_SOUND = 61
+--[[$const]] ENEMY_DIE_SOUND = 60
 
 #include utilities.lua
 #include character.lua
@@ -20,6 +26,12 @@
 
 local player = Player:new()
 local enemies = {}
+local bricks = {}
+
+function player:shoot(left)
+	sfx(SHOOT_SOUND)
+	printh(left)
+end
 
 function round(value)
 	return value >= 0 and flr(value + 0.5) or ceil(value - 0.5)
@@ -33,6 +45,7 @@ function place_player()
 		for x=1,127 do
 			local maptile = mget(x,y)
 			if maptile == PLAYER_START_TILE then
+				mset(x,y,0)
 				player:move_to(x*8, y*8)
 				return
 			end
@@ -45,6 +58,7 @@ function place_enemies()
 		for x=1,127 do
 			local maptile = mget(x,y)
 			if maptile == ENEMY_SPAWN_TILE then
+				mset(x,y,0)
 				local enemy = Enemy:new()
 				enemy:move_to(x*8,y*8)
 				enemies[#enemies+1] = enemy
@@ -54,7 +68,12 @@ function place_enemies()
 	end
 end
 
-
+function zap_block(x,y)
+	local maptile = mget(x,y)
+	if maptile == BRICK_TILE then
+		bricks[x+y*128] = {x,y,0}
+	end
+end
 
 function count_remaining_gold()
 	for y=1,127 do
@@ -93,7 +112,21 @@ function _update()
 	for e in all(enemies) do
 		e:update()
 	end
+	for b in all(bricks) do
+		if b[2] != nil then
+			if b[2] <= 5 then
+				mset(b[0],b[1],BRICK_TILE+b[2])
+			elseif b[2] >= BRICK_END then
+				mset(b[0],b[1],BRICK_TILE+5-(b[2]-BRICK_END))
+			end
 
+			if b[2] > BRICK_END+5 then
+				b[2] = nil
+			else
+				b[2] += 1 -- tick up
+			end
+		end
+	end
 end
 
 function set_palette()
