@@ -6,10 +6,10 @@ function get_tile(pos)
 end
 
 function get_floor(pos)
-	return mget(
+	return {
 		round(pos.x),
 		pos.y + 1
-	)
+	}
 end
 
 function get_floor_left(pos)
@@ -26,24 +26,24 @@ function get_floor_right(pos)
 end
 
 function get_ceiling(pos)
-	return mget(
+	return {
 		round(pos.x),
 		ceil(pos.y - 1)
-	)
+	}
 end
 
 function get_left(pos)
-	return mget(
+	return {
 		ceil(pos.x - 1),
 		round(pos.y)
-	)
+	}
 end
 
 function get_right(pos)
-	return mget(
+	return {
 		pos.x + 1,
 		round(pos.y)
-	)
+	}
 end
 
 function round(value)

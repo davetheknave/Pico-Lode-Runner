@@ -71,8 +71,9 @@ function Character:check_mobility()
 		return
 	end
 	-- Get surroundings and determine what movement is possible
-	local floor = get_floor(self:pos())
-	local grounded = fget(floor, COLLISION_FLAG)
+	local below = get_floor(self:pos())
+	local floor = mget(unpack(below))
+	local grounded = fget(floor, COLLISION_FLAG) or below[2] > level.mapY + 16
 	local player_tile = get_tile(self:pos())
 	local touching_ladder = player_tile == LADDER_TILE or floor == LADDER_TILE
 
@@ -95,7 +96,8 @@ function Character:check_mobility()
 			self.state = STATE_STANDING
 		end
 	end
-	if fget(get_ceiling(self:pos()), COLLISION_FLAG) then
+	local ceiling = get_ceiling(self:pos())
+	if fget(mget(unpack(ceiling)), COLLISION_FLAG) or ceiling[2] < level.mapY then
 		self.up_allowed = false
 	end
 	if player_tile == SHIMMY_TILE and self.y % 8 == 0 then
@@ -104,8 +106,8 @@ function Character:check_mobility()
 	end
 	local left = get_left(self:pos())
 	local right = get_right(self:pos())
-	self.left_allowed = not fget(left, COLLISION_FLAG)
-	self.right_allowed = not fget(right, COLLISION_FLAG)
+	self.left_allowed = not fget(mget(unpack(left)), COLLISION_FLAG) and not (left[1] < level.mapX)
+	self.right_allowed = not fget(mget(unpack(right)), COLLISION_FLAG) and not (right[1] > level.mapX + 16)
 
 	local approx_left = mget(round(self:pos().x) - 1, round(self:pos().y))
 	local approx_right = mget(round(self:pos().x) + 1, round(self:pos().y))
@@ -145,8 +147,8 @@ function Character:update_movement()
 	if self.state == STATE_FALLING then
 		self.y += GRAVITY
 	end
-	floor = get_floor(self:pos())
-	grounded = fget(floor, COLLISION_FLAG)
+	local floor = get_floor(self:pos())
+	local grounded = fget(mget(unpack(floor)), COLLISION_FLAG) or floor[2] > level.mapY + 16
 	if grounded then
 		self.y = flr(self.y / 8) * 8
 	end
