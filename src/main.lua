@@ -2,13 +2,6 @@
 --[[$const]] SPEED = 1
 --[[$const]] GRAVITY = SPEED
 --[[$const]] ANIMATION_RATE = 4
--- tiles/sprites
---[[$const]] GOLD_TILE = 24
---[[$const]] PLAYER_START_TILE = 25
---[[$const]] ENEMY_SPAWN_TILE = 26
---[[$const]] LADDER_TILE = 20
---[[$const]] SHIMMY_TILE = 22
---[[$const]] BRICK_TILE = 33
 -- brick lifecycle
 --[[$const]] BRICK_END = 90
 -- flags
@@ -23,84 +16,38 @@
 #include character.lua
 #include player.lua
 #include enemy.lua
+#include level.lua
 
 local player = Player:new()
 local enemies = {}
 local bricks = {}
+local level = Level:new(0, 0)
+frame = 0
 
 function player:shoot(left)
 	sfx(SHOOT_SOUND)
-	printh(left)
-end
-
-function round(value)
-	return value >= 0 and flr(value + 0.5) or ceil(value - 0.5)
-end
-
-gold = 0
-frame = 0
-
-function place_player()
-	for y = 1, 127 do
-		for x = 1, 127 do
-			local maptile = mget(x, y)
-			if maptile == PLAYER_START_TILE then
-				mset(x, y, 0)
-				player:move_to(x * 8, y * 8)
-				return
-			end
-		end
-	end
-end
-
-function place_enemies()
-	for y = 1, 127 do
-		for x = 1, 127 do
-			local maptile = mget(x, y)
-			if maptile == ENEMY_SPAWN_TILE then
-				mset(x, y, 0)
-				local enemy = Enemy:new()
-				enemy:move_to(x * 8, y * 8)
-				enemies[#enemies + 1] = enemy
-				return
-			end
-		end
-	end
-end
-
-function zap_block(x, y)
-	local maptile = mget(x, y)
-	if maptile == BRICK_TILE then
-		bricks[x + y * 128] = { x, y, 0 }
-	end
-end
-
-function count_remaining_gold()
-	for y = 1, 127 do
-		for x = 1, 127 do
-			if mget(x, y) == GOLD_TILE then
-				gold += 1
-			end
-		end
+	if left then
+		level:zap_block(get_floor_left(player:pos()))
+	else
+		level:zap_block(get_floor_right(player:pos()))
 	end
 end
 
 function _init()
-	place_player()
-	place_enemies()
-	count_remaining_gold()
 	set_palette()
+	level:place_player(player)
+	level:place_enemies(enemies)
+	level:init()
 end
 
 function win()
 	printh("You win")
 end
 
-function get_gold(pos)
+function player:get_gold(pos)
 	sfx(GOLD_SOUND)
-	mset(round(pos.x), round(pos.y), 0)
-	gold -= 1
-	if gold <= 0 then
+	local won = level:get_gold(round(pos.x), round(pos.y))
+	if won then
 		win()
 	end
 end
@@ -111,21 +58,7 @@ function _update()
 	for e in all(enemies) do
 		e:update()
 	end
-	for b in all(bricks) do
-		if b[2] != nil then
-			if b[2] <= 5 then
-				mset(b[0], b[1], BRICK_TILE + b[2])
-			elseif b[2] >= BRICK_END then
-				mset(b[0], b[1], BRICK_TILE + 5 - (b[2] - BRICK_END))
-			end
-
-			if b[2] > BRICK_END + 5 then
-				b[2] = nil
-			else
-				b[2] += 1 -- tick up
-			end
-		end
-	end
+	level:update()
 end
 
 function set_palette()
@@ -144,11 +77,12 @@ end
 
 function _draw()
 	cls()
+	-- Background
 	palt(15, false)
 	map(112, 048, 0, 0, 128, 128)
 	palt(15, true)
 	palt(0, false)
-	map(0, 0, 0, 0, 128, 128, 128)
+	level:draw()
 	player:draw()
 	for e in all(enemies) do
 		e:draw()

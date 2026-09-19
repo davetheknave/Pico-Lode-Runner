@@ -59,7 +59,7 @@ function Player:update()
 	-- game logic
 	local next_tile = get_tile(self:pos())
 	if next_tile == GOLD_TILE then
-		get_gold(self:pos())
+		self:get_gold(self:pos())
 	end
 	self:update_animation()
 end

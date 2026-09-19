@@ -114,8 +114,8 @@ function Character:check_mobility()
 
 	local approx_left = mget(round(self:pos().x) - 1, round(self:pos().y))
 	local approx_right = mget(round(self:pos().x) + 1, round(self:pos().y))
-	self.shoot_left_allowed = get_floor_left(self:pos()) == BRICK_TILE and approx_left == 0
-	self.shoot_right_allowed = get_floor_right(self:pos()) == BRICK_TILE and approx_right == 0
+	self.shoot_left_allowed = mget(unpack(get_floor_left(self:pos()))) == BRICK_TILE and approx_left == 0
+	self.shoot_right_allowed = mget(unpack(get_floor_right(self:pos()))) == BRICK_TILE and approx_right == 0
 end
 
 function Character:get_input()

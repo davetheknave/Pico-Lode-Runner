@@ -13,16 +13,16 @@ function get_floor(pos)
 end
 
 function get_floor_left(pos)
-	return mget(
+	return {
 		round(pos.x) - 1,
 		pos.y + 1
-	)
+	}
 end
 function get_floor_right(pos)
-	return mget(
+	return {
 		round(pos.x) + 1,
 		pos.y + 1
-	)
+	}
 end
 
 function get_ceiling(pos)
@@ -44,4 +44,8 @@ function get_right(pos)
 		pos.x + 1,
 		round(pos.y)
 	)
+end
+
+function round(value)
+	return value >= 0 and flr(value + 0.5) or ceil(value - 0.5)
 end
