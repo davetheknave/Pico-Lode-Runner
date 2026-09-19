@@ -57,11 +57,6 @@ function Character:get_sprite()
 	return loop[self.frame % #loop + 1] + self.sprite
 end
 
-function Character:draw()
-	local sprite = self:get_sprite()
-	spr(sprite, self.x, self.y, 1, 1, self.facing_left)
-end
-
 function Character:check_mobility()
 	if self.state == STATE_SHOOTING then
 		if time() - self.last_state_change >= SHOOT_DURATION then
@@ -114,8 +109,8 @@ function Character:check_mobility()
 
 	local approx_left = mget(round(self:pos().x) - 1, round(self:pos().y))
 	local approx_right = mget(round(self:pos().x) + 1, round(self:pos().y))
-	self.shoot_left_allowed = mget(unpack(get_floor_left(self:pos()))) == BRICK_TILE and approx_left == 0
-	self.shoot_right_allowed = mget(unpack(get_floor_right(self:pos()))) == BRICK_TILE and approx_right == 0
+	self.shoot_left_allowed = mget(unpack(get_floor_left(self:pos()))) == BRICK_TILE and not fget(approx_left, BLOCK_ZAP_FLAG)
+	self.shoot_right_allowed = mget(unpack(get_floor_right(self:pos()))) == BRICK_TILE and not fget(approx_right, BLOCK_ZAP_FLAG)
 end
 
 function Character:get_input()
@@ -168,4 +163,9 @@ function Character:update()
 	self:get_input()
 	self:update_movement()
 	self:update_animation()
+end
+
+function Character:draw()
+	local sprite = self:get_sprite()
+	spr(sprite, self.x, self.y, 1, 1, self.facing_left)
 end

@@ -6,6 +6,9 @@
 --[[$const]] BRICK_END = 90
 -- flags
 --[[$const]] COLLISION_FLAG = 0
+--[[$const]] KILL_FLAG = 1
+--[[$const]] BLOCK_ZAP_FLAG = 2
+--[[$const]] VISIBLE_FLAG = 7
 -- sounds
 --[[$const]] GOLD_SOUND = 63
 --[[$const]] SHOOT_SOUND = 62
@@ -21,7 +24,9 @@
 local player = Player:new()
 local enemies = {}
 local bricks = {}
-local level = Level:new(0, 0)
+local levelID = 10
+level = Level:new((levelID % 8) * 16, flr(levelID / 8) * 16)
+camera(level.mapX * 8, level.mapY * 8)
 frame = 0
 
 function player:shoot(left)
@@ -79,7 +84,7 @@ function _draw()
 	cls()
 	-- Background
 	palt(15, false)
-	map(112, 048, 0, 0, 128, 128)
+	map(112, 048, level.mapX * 8, level.mapY * 8, 128, 128)
 	palt(15, true)
 	palt(0, false)
 	level:draw()

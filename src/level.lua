@@ -22,8 +22,8 @@ function Level:new(x, y)
 end
 
 function Level:index_bricks()
-    for y = 1, 16 do
-        for x = 1, 16 do
+    for y = self.mapY, self.mapY + 15 do
+        for x = self.mapX, self.mapX + 15 do
             local maptile = mget(x, y)
             if maptile == BRICK_TILE then
                 self.bricks[#self.bricks + 1] = { x, y, -1 }
@@ -33,8 +33,8 @@ function Level:index_bricks()
 end
 
 function Level:place_player(player)
-    for y = 1, 16 do
-        for x = 1, 16 do
+    for y = self.mapY, self.mapY + 15 do
+        for x = self.mapX, self.mapX + 15 do
             local maptile = mget(x, y)
             if maptile == PLAYER_START_TILE then
                 mset(x, y, 0)
@@ -46,8 +46,8 @@ function Level:place_player(player)
 end
 
 function Level:place_enemies(enemies)
-    for y = 1, 16 do
-        for x = 1, 16 do
+    for y = self.mapY, self.mapY + 15 do
+        for x = self.mapX, self.mapX + 15 do
             local maptile = mget(x, y)
             if maptile == ENEMY_SPAWN_TILE then
                 mset(x, y, 0)
@@ -60,8 +60,8 @@ function Level:place_enemies(enemies)
 end
 
 function Level:count_remaining_gold()
-    for y = 1, 127 do
-        for x = 1, 127 do
+    for y = self.mapY, self.mapY + 15 do
+        for x = self.mapX, self.mapX + 15 do
             if mget(x, y) == GOLD_TILE then
                 self.gold += 1
             end
@@ -74,7 +74,6 @@ function Level:zap_block(pos)
     if maptile == BRICK_TILE then
         for b in all(self.bricks) do
             if b[1] == pos[1] and b[2] == pos[2] then
-                printh("zap")
                 b[3] = 0
                 return
             end
@@ -87,6 +86,7 @@ end
 function Level:get_gold(x, y)
     mset(x, y, 0)
     self.gold -= 1
+    printh(self.gold)
     if self.gold <= 0 then
         return true
     else
@@ -103,22 +103,22 @@ function Level:update()
     -- update zapped bricks
     for b in all(self.bricks) do
         if b[3] != -1 then
-            printh("ASDF")
+            -- Zapping
             if b[3] <= 5 then
                 mset(b[1], b[2], BRICK_TILE + b[3])
             elseif b[3] >= BRICK_END then
-                mset(b[1], b[2], BRICK_TILE + 5 - (b[3] - BRICK_END))
+                mset(b[1], b[2], BRICK_TILE + 5 - (b[3] - BRICK_END) + 1)
             end
-
+            -- Unzapping
             if b[3] > BRICK_END + 5 then
                 b[3] = -1
-            else
-                b[3] += 1 -- tick up
+                return
             end
+            b[3] += 1 -- tick up
         end
     end
 end
 
 function Level:draw()
-    map(self.mapX, self.mapY, 0, 0, 128, 128, 0x8F)
+    map(self.mapX, self.mapY, self.mapX * 8, self.mapY * 8, 16, 16, 0x8F)
 end
