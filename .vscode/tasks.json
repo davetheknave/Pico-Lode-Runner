@@ -1,0 +1,18 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "p8tool build build/loderunner.p8 --lua src/main.lua",
+            "problemMatcher": []
+        },
+        {
+            "label": "stats",
+            "type": "shell",
+            "command": "p8tool stats build/loderunner.p8"
+        }
+    ]
+}
