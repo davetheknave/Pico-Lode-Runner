@@ -45,6 +45,7 @@ function _init()
 	level:place_player(player)
 	level:place_enemies(enemies)
 	level:init()
+	gui:init()
 end
 
 function win()
@@ -61,7 +62,7 @@ end
 
 function _update()
 	frame += 1
-	local paused = not gui:handle_input()
+	local paused = gui:handle_input()
 	if not paused then
 		player:update()
 		for e in all(enemies) do
