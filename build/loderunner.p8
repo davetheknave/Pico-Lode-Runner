@@ -445,6 +445,70 @@ function Level:draw()
     map(self.mapX, self.mapY, self.mapX * 8, self.mapY * 8, 16, 16, 0x8F)
 end
 end
+package._c["gui"]=function()
+GUI = {
+    windows = {},
+    xOffset = 0,
+    yOffset = 0
+}
+GUI.__index = GUI
+
+function GUI:new(x, y)
+    local instance = setmetatable({}, self)
+    self.xOffset = x
+    self.yOffset = y
+    return instance
+end
+
+function GUI:draw_window(x, y, w, h)
+    local cornerthing = 1
+    local outline_color = 0
+    local fill_color = 1
+    rrectfill(self.xOffset + x, self.yOffset + y, w, h, 1, fill_color)
+    rrect(self.xOffset + x, self.yOffset + y, w, h, 1, outline_color)
+    circfill(self.xOffset + x, self.yOffset + y, cornerthing, outline_color)
+    circfill(self.xOffset + x + w - 1, self.yOffset + y, cornerthing, outline_color)
+    circfill(self.xOffset + x, self.yOffset + y + h - 1, cornerthing, outline_color)
+    circfill(self.xOffset + x + w - 1, self.yOffset + y + h - 1, cornerthing, outline_color)
+end
+
+function GUI:draw_textbox(message, x, y, w, h)
+    local padding = 3
+    self:draw_window(x, y, w, h)
+    print(message, self.xOffset + x + padding, self.yOffset + y + padding)
+end
+
+function GUI:draw_bottom_text(message)
+    local text_height = 7
+    self:draw_textbox(message, 1, 109, 126, text_height * 2 + 4)
+end
+
+function GUI:draw_list(items, x, y, h, w)
+    self:draw_window(2, 2, 50, 50)
+    local index = 0
+    for i in all(items) do
+        print(i, self.xOffset + x + 2, self.yOffset + y + 7 * index + 2)
+        index += 1
+    end
+end
+
+function GUI_draw_grid(items)
+end
+
+function GUI_draw_grid_item(text)
+end
+
+-- returns false if input shouldn't continue to bubble
+function GUI:handle_input()
+    return false
+end
+
+function GUI:draw()
+    self:draw_list({ "item 1", "item 2", "item 3" }, 2, 2, 50, 50)
+end
+
+-- four selections, yes no, popup, items, pkmn, stats screen, multi window
+end
 function require(p)
 local l=package.loaded
 if (l[p]==nil) l[p]=package._c[p]()
@@ -473,6 +537,7 @@ require("character")
 require("player")
 require("enemy")
 require("level")
+require("gui")
 
 local player = Player:new()
 local enemies = {}
@@ -481,6 +546,7 @@ local levelID = 10
 level = Level:new((levelID % 8) * 16, flr(levelID / 8) * 16)
 camera(level.mapX * 8, level.mapY * 8)
 frame = 0
+local gui = GUI:new(level.mapX * 8, level.mapY * 8)
 
 function player:shoot(left)
 	sfx(SHOOT_SOUND)
@@ -512,11 +578,14 @@ end
 
 function _update()
 	frame += 1
-	player:update()
-	for e in all(enemies) do
-		e:update()
+	local paused = not gui:handle_input()
+	if not paused then
+		player:update()
+		for e in all(enemies) do
+			e:update()
+		end
+		level:update()
 	end
-	level:update()
 end
 
 function set_palette()
@@ -545,6 +614,7 @@ function _draw()
 	for e in all(enemies) do
 		e:draw()
 	end
+	gui:draw()
 end
 __gfx__
 000000001f5555ff1f5555ff1f5555ff1f5555ff1f5555ff1f5555f11f5555f1ffffffffffffffff1f5555f1ff5555ffffff5fff000000000000000000000000

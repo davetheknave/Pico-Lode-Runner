@@ -20,6 +20,7 @@
 #include player.lua
 #include enemy.lua
 #include level.lua
+#include gui.lua
 
 local player = Player:new()
 local enemies = {}
@@ -28,6 +29,7 @@ local levelID = 10
 level = Level:new((levelID % 8) * 16, flr(levelID / 8) * 16)
 camera(level.mapX * 8, level.mapY * 8)
 frame = 0
+local gui = GUI:new(level.mapX * 8, level.mapY * 8)
 
 function player:shoot(left)
 	sfx(SHOOT_SOUND)
@@ -59,11 +61,14 @@ end
 
 function _update()
 	frame += 1
-	player:update()
-	for e in all(enemies) do
-		e:update()
+	local paused = not gui:handle_input()
+	if not paused then
+		player:update()
+		for e in all(enemies) do
+			e:update()
+		end
+		level:update()
 	end
-	level:update()
 end
 
 function set_palette()
@@ -92,4 +97,5 @@ function _draw()
 	for e in all(enemies) do
 		e:draw()
 	end
+	gui:draw()
 end
