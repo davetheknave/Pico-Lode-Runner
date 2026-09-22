@@ -479,7 +479,7 @@ end
 
 function GUI:init()
     self:make_textbox("hello!")
-    self:make_yesno(true)
+    -- self:make_yesno(true, function() printh("yes") end, function() printh("no") end)
     self:make_level_select()
 end
 
@@ -537,21 +537,21 @@ function GUI:draw_grid_item(text, selected, x, y, w, h)
     else
         rrectfill(x, y, w - 1, h - 1, 1, 4)
     end
-    print(text, x + w / 2 - (4 * #text / 2), y + h / 2 - 2, 1)
+    print(text, x + w / 2 - (4 * #text / 2), y + h / 2 - 3, 1)
 end
 
 function GUI:close_window()
     deli(self.windows)
 end
 
-function GUI:make_yesno(startYes)
+function GUI:make_yesno(startYes, onYes, onNo)
     local window = Window:new(self)
     window.yes = startYes
-    window.onX = function() self:close_window() end
-    window.onO = function() self:close_window() end
+    window.onX = function() self:close_window() onNo() end
+    window.onO = function() self:close_window() if window.yes then onYes() else onNo() end end
     window.onUp = function() window.yes = not window.yes end
     window.onDown = function() window.yes = not window.yes end
-    window.draw = function() self:draw_list({ "yes", "no" }, not startYes and 1 or 0, 107, 92, 20, 16) end
+    window.draw = function() self:draw_list({ "yes", "no" }, not window.yes and 1 or 0, 107, 92, 20, 16) end
     add(self.windows, window)
     return window
 end
@@ -566,9 +566,52 @@ function GUI:make_textbox(message)
 end
 
 function GUI:make_level_select()
-    local window = Window:new(self)
     local levels = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16" }
-    window.draw = function() self:draw_grid(levels, 2, 1, 10, 126, 98, 4) end
+    local function choose(chosen)
+        printh(chosen)
+    end
+    self:make_grid(levels, choose)
+end
+
+function GUI:make_grid(items, onChoose)
+    local window = Window:new(self)
+    local cols = 4
+    window.selected = 2
+    window.onX = function() self:close_window() end
+    window.onO = function() self:close_window() onChoose(window.selected + 1) end
+    window.onUp = function()
+        window.selected = window.selected - cols
+        if window.selected < 0 then
+            window.selected = ceil(#items / cols) * cols + window.selected
+        end
+        if window.selected >= #items then
+            window.selected -= cols
+        end
+    end
+    window.onDown = function()
+        window.selected = window.selected + cols
+        if window.selected >= #items then
+            window.selected = window.selected - ceil(#items / cols) * cols
+        end
+        if window.selected < 0 then
+            window.selected += cols
+        end
+    end
+    window.onLeft = function()
+        -- window.selected = (window.selected - 1) % #items
+        window.selected = (window.selected - 1) % cols + flr(window.selected / cols) * cols
+        if window.selected >= #items then
+            window.selected = #items - 1
+        end
+    end
+    window.onRight = function()
+        -- window.selected = (window.selected + 1) % #items
+        window.selected = (window.selected + 1) % cols + flr(window.selected / cols) * cols
+        if window.selected >= #items then
+            window.selected = flr(#items / cols) * cols
+        end
+    end
+    window.draw = function() self:draw_grid(items, window.selected + 1, 1, 10, 126, 98, cols) end
     add(self.windows, window)
     return window
 end
