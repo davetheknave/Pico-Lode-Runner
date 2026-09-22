@@ -480,6 +480,7 @@ end
 function GUI:init()
     self:make_textbox("hello!")
     self:make_yesno(true)
+    self:make_level_select()
 end
 
 function GUI:draw_window(x, y, w, h)
@@ -505,8 +506,8 @@ function GUI:draw_bottom_text(message)
     self:draw_textbox(message, 1, 109, 126, text_height * 2 + 4)
 end
 
-function GUI:draw_list(items, selection, x, y, h, w)
-    self:draw_window(x, y, h, w)
+function GUI:draw_list(items, selection, x, y, w, h)
+    self:draw_window(x, y, w, h)
     local index = 0
     for i in all(items) do
         print(i, self.xOffset + x + 2 + 4, self.yOffset + y + 7 * index + 2)
@@ -515,10 +516,28 @@ function GUI:draw_list(items, selection, x, y, h, w)
     circ(self.xOffset + x + 3, self.yOffset + y + 4 + 7 * selection, 1)
 end
 
-function GUI_draw_grid(items)
+function GUI:draw_grid(items, selected, x, y, w, h, cols)
+    self:draw_window(x, y, w, h)
+    local rows = ceil(#items / cols)
+    for row = 1, rows do
+        for column = 1, cols do
+            local index = (row - 1) * cols + column
+            if index <= #items then
+                local itemX = self.xOffset + x + (column - 1) * (w - 2) / cols + 2
+                local itemY = self.yOffset + y + (row - 1) * (h - 2) / rows + 2
+                self:draw_grid_item(items[index], index == selected, itemX, itemY, (w - 2) / cols - 1, (h - 2) / rows - 1)
+            end
+        end
+    end
 end
 
-function GUI_draw_grid_item(text)
+function GUI:draw_grid_item(text, selected, x, y, w, h)
+    if selected then
+        rrectfill(x, y, w - 1, h - 1, 1, 3)
+    else
+        rrectfill(x, y, w - 1, h - 1, 1, 4)
+    end
+    print(text, x + w / 2 - (4 * #text / 2), y + h / 2 - 2, 1)
 end
 
 function GUI:close_window()
@@ -542,6 +561,14 @@ function GUI:make_textbox(message)
     window.onX = function() self:close_window() end
     window.onO = function() self:close_window() end
     window.draw = function() self:draw_bottom_text(message) end
+    add(self.windows, window)
+    return window
+end
+
+function GUI:make_level_select()
+    local window = Window:new(self)
+    local levels = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16" }
+    window.draw = function() self:draw_grid(levels, 2, 1, 10, 126, 98, 4) end
     add(self.windows, window)
     return window
 end
@@ -574,7 +601,6 @@ function GUI:handle_input()
             if top.onLeft != nil then
                 top.onLeft()
             end
-        else
         end
         return true
     else
