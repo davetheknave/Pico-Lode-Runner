@@ -20,16 +20,35 @@
 #include player.lua
 #include enemy.lua
 #include level.lua
-#include gui.lua
+#include gui/window_manager.lua
+#include gui/renderer.lua
+#include gui/lr_widgets.lua
 
-local player = Player:new()
-local enemies = {}
-local bricks = {}
-local levelID = 10
-level = Level:new((levelID % 8) * 16, flr(levelID / 8) * 16)
-camera(level.mapX * 8, level.mapY * 8)
+player = Player:new()
+local gui = GUI:new(0, 0)
 frame = 0
-local gui = GUI:new(level.mapX * 8, level.mapY * 8)
+running = false
+current_level_id = 0
+
+levels = {
+	0,
+	1,
+	2,
+	3,
+	4,
+	5,
+	6,
+	7,
+	8,
+	9,
+	10,
+	11,
+	12,
+	13,
+	14,
+	15,
+	17
+}
 
 function player:shoot(left)
 	sfx(SHOOT_SOUND)
@@ -40,16 +59,43 @@ function player:shoot(left)
 	end
 end
 
-function _init()
-	set_palette()
+function load_level(levelID)
+	current_level_id = levelID + 1
+	enemies = {}
+	bricks = {}
+	level = Level:new((levels[current_level_id] % 8) * 16, flr(levels[current_level_id] / 8) * 16)
+	camera(level.mapX * 8, level.mapY * 8)
+	gui.xOffset = level.mapX * 8
+	gui.yOffset = level.mapY * 8
+	frame = 0
 	level:place_player(player)
 	level:place_enemies(enemies)
 	level:init()
-	gui:init()
+	running = true
+end
+
+function _init()
+	set_palette()
+	show_main_menu()
+end
+
+function show_main_menu()
+	gui:make_level_select(load_level)
 end
 
 function win()
 	printh("You win")
+	current_level_id += 1
+	if current_level_id > #levels then
+		current_level_id = 0
+		show_main_menu()
+	else
+		load_level(current_level_id)
+	end
+end
+
+function lose()
+	load_level(current_level_id)
 end
 
 function player:get_gold(pos)
@@ -88,15 +134,17 @@ end
 
 function _draw()
 	cls()
-	-- Background
-	palt(15, false)
-	map(112, 048, level.mapX * 8, level.mapY * 8, 128, 128)
-	palt(15, true)
-	palt(0, false)
-	level:draw()
-	player:draw()
-	for e in all(enemies) do
-		e:draw()
+	if running then
+		-- Background
+		palt(15, false)
+		map(112, 048, level.mapX * 8, level.mapY * 8, 128, 128)
+		palt(15, true)
+		palt(0, false)
+		level:draw()
+		player:draw()
+		for e in all(enemies) do
+			e:draw()
+		end
 	end
 	gui:draw()
 end

@@ -1,40 +1,3 @@
-Window = {
-    owner = nil,
-    draw = nil,
-    onX = nil,
-    onO = nil,
-    onUp = nil,
-    onDown = nil,
-    onLeft = nil,
-    onRight = nil
-}
-
-Window.__index = Window
-function Window:new(owner)
-    local instance = setmetatable({ owner = owner }, self)
-    return instance
-end
-
-GUI = {
-    windows = {},
-    xOffset = 0,
-    yOffset = 0
-}
-GUI.__index = GUI
-
-function GUI:new(x, y)
-    local instance = setmetatable({}, self)
-    self.xOffset = x
-    self.yOffset = y
-    return instance
-end
-
-function GUI:init()
-    self:make_textbox("hello!")
-    -- self:make_yesno(true, function() printh("yes") end, function() printh("no") end)
-    self:make_level_select()
-end
-
 function GUI:draw_window(x, y, w, h)
     local cornerthing = 1
     local outline_color = 0
@@ -51,11 +14,6 @@ function GUI:draw_textbox(message, x, y, w, h)
     local padding = 3
     self:draw_window(x, y, w, h)
     print(message, self.xOffset + x + padding, self.yOffset + y + padding)
-end
-
-function GUI:draw_bottom_text(message)
-    local text_height = 7
-    self:draw_textbox(message, 1, 109, 126, text_height * 2 + 4)
 end
 
 function GUI:draw_list(items, selection, x, y, w, h)
@@ -92,22 +50,6 @@ function GUI:draw_grid_item(text, selected, x, y, w, h)
     print(text, x + w / 2 - (4 * #text / 2), y + h / 2 - 3, 1)
 end
 
-function GUI:close_window()
-    deli(self.windows)
-end
-
-function GUI:make_yesno(startYes, onYes, onNo)
-    local window = Window:new(self)
-    window.yes = startYes
-    window.onX = function() self:close_window() onNo() end
-    window.onO = function() self:close_window() if window.yes then onYes() else onNo() end end
-    window.onUp = function() window.yes = not window.yes end
-    window.onDown = function() window.yes = not window.yes end
-    window.draw = function() self:draw_list({ "yes", "no" }, not window.yes and 1 or 0, 107, 92, 20, 16) end
-    add(self.windows, window)
-    return window
-end
-
 function GUI:make_textbox(message)
     local window = Window:new(self)
     window.onX = function() self:close_window() end
@@ -117,20 +59,12 @@ function GUI:make_textbox(message)
     return window
 end
 
-function GUI:make_level_select()
-    local levels = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16" }
-    local function choose(chosen)
-        printh(chosen)
-    end
-    self:make_grid(levels, choose)
-end
-
 function GUI:make_grid(items, onChoose)
     local window = Window:new(self)
     local cols = 4
-    window.selected = 2
+    window.selected = 0
     window.onX = function() self:close_window() end
-    window.onO = function() self:close_window() onChoose(window.selected + 1) end
+    window.onO = function() self:close_window() onChoose(window.selected) end
     window.onUp = function()
         window.selected = window.selected - cols
         if window.selected < 0 then
@@ -166,47 +100,4 @@ function GUI:make_grid(items, onChoose)
     window.draw = function() self:draw_grid(items, window.selected + 1, 1, 10, 126, 98, cols) end
     add(self.windows, window)
     return window
-end
-
--- returns true if input shouldn't continue to bubble
-function GUI:handle_input()
-    if #self.windows > 0 then
-        local top = self.windows[#self.windows]
-        if btnp(4) then
-            if top.onO != nil then
-                top.onO()
-            end
-        elseif btnp(5) then
-            if top.onX != nil then
-                top.onX()
-            end
-        elseif btnp(2) then
-            if top.onUp != nil then
-                top.onUp()
-            end
-        elseif btnp(3) then
-            if top.onDown != nil then
-                top.onDown()
-            end
-        elseif btnp(1) then
-            if top.onRight != nil then
-                top.onRight()
-            end
-        elseif btnp(0) then
-            if top.onLeft != nil then
-                top.onLeft()
-            end
-        end
-        return true
-    else
-        return false
-    end
-end
-
-function GUI:draw()
-    for w in all(self.windows) do
-        if w.draw != nil then
-            w.draw()
-        end
-    end
 end
