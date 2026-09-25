@@ -46,14 +46,16 @@ function Level:place_player(player)
 end
 
 function Level:place_enemies(enemies)
+    local index = 0
     for y = self.mapY, self.mapY + 15 do
         for x = self.mapX, self.mapX + 15 do
             local maptile = mget(x, y)
             if maptile == ENEMY_SPAWN_TILE then
                 mset(x, y, 0)
-                local enemy = Enemy:new()
+                local enemy = Enemy:new(index)
                 enemy:move_to(x * 8, y * 8)
                 enemies[#enemies + 1] = enemy
+                index += 1
             end
         end
     end
@@ -86,7 +88,6 @@ end
 function Level:get_gold(x, y)
     mset(x, y, 0)
     self.gold -= 1
-    printh(self.gold)
     if self.gold <= 0 then
         return true
     else
