@@ -80,7 +80,7 @@ function _init()
 end
 
 function show_main_menu()
-	gui:make_level_select(load_level)
+	gui:make_main_menu(load_level)
 end
 
 function win()

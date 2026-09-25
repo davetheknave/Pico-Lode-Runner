@@ -50,16 +50,7 @@ function GUI:draw_grid_item(text, selected, x, y, w, h)
     print(text, x + w / 2 - (4 * #text / 2), y + h / 2 - 3, 1)
 end
 
-function GUI:make_textbox(message)
-    local window = Window:new(self)
-    window.onX = function() self:close_window() end
-    window.onO = function() self:close_window() end
-    window.draw = function() self:draw_bottom_text(message) end
-    add(self.windows, window)
-    return window
-end
-
-function GUI:make_grid(items, onChoose)
+function GUI:make_grid(items, x, y, w, h, onChoose)
     local window = Window:new(self)
     local cols = 4
     window.selected = 0
@@ -97,7 +88,16 @@ function GUI:make_grid(items, onChoose)
             window.selected = flr(#items / cols) * cols
         end
     end
-    window.draw = function() self:draw_grid(items, window.selected + 1, 1, 10, 126, 98, cols) end
+    window.draw = function() self:draw_grid(items, window.selected + 1, x, y, w, h, cols) end
+    add(self.windows, window)
+    return window
+end
+
+function GUI:make_textbox(message)
+    local window = Window:new(self)
+    window.onX = function() self:close_window() end
+    window.onO = function() self:close_window() end
+    window.draw = function() self:draw_bottom_text(message) end
     add(self.windows, window)
     return window
 end

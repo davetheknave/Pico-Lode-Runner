@@ -1,7 +1,17 @@
-function GUI:make_level_select(choose)
+function GUI:make_main_menu(choose)
     local levels = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17" }
-    self:make_grid(levels, choose)
+    local grid = self:make_grid(levels, 2, 20, 124, 106, choose)
+    grid.onX = nil
+    local old_draw = grid.draw
+    local title = "lode runner"
+    local style = "\f7\^w\^t\^o!ff"
+    grid.draw = function()
+        cls(1)
+        old_draw()
+        print(style .. title, self.xOffset + 64 - (#title / 2 * 8), 4, 0)
+    end
 end
+
 function GUI:make_yesno(startYes, onYes, onNo)
     local window = Window:new(self)
     window.yes = startYes

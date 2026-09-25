@@ -572,16 +572,7 @@ function GUI:draw_grid_item(text, selected, x, y, w, h)
     print(text, x + w / 2 - (4 * #text / 2), y + h / 2 - 3, 1)
 end
 
-function GUI:make_textbox(message)
-    local window = Window:new(self)
-    window.onX = function() self:close_window() end
-    window.onO = function() self:close_window() end
-    window.draw = function() self:draw_bottom_text(message) end
-    add(self.windows, window)
-    return window
-end
-
-function GUI:make_grid(items, onChoose)
+function GUI:make_grid(items, x, y, w, h, onChoose)
     local window = Window:new(self)
     local cols = 4
     window.selected = 0
@@ -619,16 +610,35 @@ function GUI:make_grid(items, onChoose)
             window.selected = flr(#items / cols) * cols
         end
     end
-    window.draw = function() self:draw_grid(items, window.selected + 1, 1, 10, 126, 98, cols) end
+    window.draw = function() self:draw_grid(items, window.selected + 1, x, y, w, h, cols) end
+    add(self.windows, window)
+    return window
+end
+
+function GUI:make_textbox(message)
+    local window = Window:new(self)
+    window.onX = function() self:close_window() end
+    window.onO = function() self:close_window() end
+    window.draw = function() self:draw_bottom_text(message) end
     add(self.windows, window)
     return window
 end
 end
 package._c["gui/lr_widgets"]=function()
-function GUI:make_level_select(choose)
+function GUI:make_main_menu(choose)
     local levels = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17" }
-    self:make_grid(levels, choose)
+    local grid = self:make_grid(levels, 2, 20, 124, 106, choose)
+    grid.onX = nil
+    local old_draw = grid.draw
+    local title = "lode runner"
+    local style = "\f7\^w\^t\^o!ff"
+    grid.draw = function()
+        cls(1)
+        old_draw()
+        print(style .. title, self.xOffset + 64 - (#title / 2 * 8), 4, 0)
+    end
 end
+
 function GUI:make_yesno(startYes, onYes, onNo)
     local window = Window:new(self)
     window.yes = startYes
@@ -734,7 +744,7 @@ function _init()
 end
 
 function show_main_menu()
-	gui:make_level_select(load_level)
+	gui:make_main_menu(load_level)
 end
 
 function win()
