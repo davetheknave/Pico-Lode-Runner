@@ -73,7 +73,7 @@ function Character:check_mobility()
 	-- Get surroundings and determine what movement is possible
 	local below = get_floor(self:pos())
 	local floor = mget(unpack(below))
-	local grounded = fget(floor, COLLISION_FLAG) or below[2] > level.mapY + 16
+	local grounded = self:check_grounded()
 	local player_tile = get_tile(self:pos())
 	local touching_ladder = player_tile == LADDER_TILE or floor == LADDER_TILE
 
@@ -119,6 +119,11 @@ function Character:get_input()
 	printh("This shouldn't run")
 end
 
+function Character:check_grounded()
+	local floor = get_floor(self:pos())
+	return flr(floor[2]) >= (level.mapY + 16) or fget(mget(unpack(floor)), COLLISION_FLAG)
+end
+
 function Character:update_movement()
 	-- the game nudges the player towards the center of the axis they are walking on
 	if self.dx != 0 and self.dy != 0 then
@@ -147,9 +152,7 @@ function Character:update_movement()
 	if self.state == STATE_FALLING then
 		self.y += GRAVITY
 	end
-	local floor = get_floor(self:pos())
-	local grounded = fget(mget(unpack(floor)), COLLISION_FLAG) or floor[2] > level.mapY + 16
-	if grounded then
+	if self:check_grounded() then
 		self.y = flr(self.y / 8) * 8
 	end
 end
