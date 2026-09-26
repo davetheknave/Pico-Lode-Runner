@@ -114,16 +114,16 @@ function check_collisions()
 			if e != e2 and aabb_sprite(e:pos(), e2:pos()) then
 				printh("enemy collision")
 				if e.collide != nil then
-					e.collide(e2)
+					e:collide(e2)
 				end
 			end
 		end
 		if aabb_sprite(e:pos(), player:pos()) then
 			printh("player collision")
 			if e.collide != nil then
-				e.collide(player)
+				e:collide(player)
 			end
-			player.collide(e)
+			player:collide(e)
 		end
 	end
 end

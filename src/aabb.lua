@@ -9,3 +9,11 @@ end
 function aabb_sprite(pos1, pos2)
     return aabb(pos1.x * 8, pos1.y * 8, 8, 8, pos2.x * 8, pos2.y * 8, 8, 8)
 end
+
+function manhattan_distance(pos1, pos2)
+    return abs(pos1.x - pos2.x) + abs(pos1.y - pos2.y)
+end
+
+function distance(pos1, pos2)
+    return sqrt(abs(pos1.x - pos2.x) ^ 2 + abs(pos1.y - pos2.y) ^ 2)
+end

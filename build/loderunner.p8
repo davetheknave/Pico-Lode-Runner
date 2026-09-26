@@ -67,6 +67,14 @@ end
 function aabb_sprite(pos1, pos2)
     return aabb(pos1.x * 8, pos1.y * 8, 8, 8, pos2.x * 8, pos2.y * 8, 8, 8)
 end
+
+function manhattan_distance(pos1, pos2)
+    return abs(pos1.x - pos2.x) + abs(pos1.y - pos2.y)
+end
+
+function distance(pos1, pos2)
+    return sqrt(abs(pos1.x - pos2.x) ^ 2 + abs(pos1.y - pos2.y) ^ 2)
+end
 end
 package._c["character"]=function()
 -- character states
@@ -302,7 +310,9 @@ function Player:get_input()
 end
 
 function Player:collide(other)
-	lose()
+	if manhattan_distance(self:pos(), other:pos()) <= 1 then
+		lose()
+	end
 end
 
 function Player:update()
@@ -784,7 +794,6 @@ function load_level(levelID)
 	frame = 0
 	level:place_player(player)
 	level:place_enemies(enemies)
-	printh(#enemies)
 	level:init()
 	running = true
 end
@@ -827,16 +836,16 @@ function check_collisions()
 			if e != e2 and aabb_sprite(e:pos(), e2:pos()) then
 				printh("enemy collision")
 				if e.collide != nil then
-					e.collide(e2)
+					e:collide(e2)
 				end
 			end
 		end
 		if aabb_sprite(e:pos(), player:pos()) then
 			printh("player collision")
 			if e.collide != nil then
-				e.collide(player)
+				e:collide(player)
 			end
-			player.collide(e)
+			player:collide(e)
 		end
 	end
 end

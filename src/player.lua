@@ -53,7 +53,9 @@ function Player:get_input()
 end
 
 function Player:collide(other)
-	lose()
+	if manhattan_distance(self:pos(), other:pos()) <= 1 then
+		lose()
+	end
 end
 
 function Player:update()
