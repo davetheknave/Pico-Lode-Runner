@@ -52,6 +52,10 @@ function Player:get_input()
 	end
 end
 
+function Player:collide(other)
+	lose()
+end
+
 function Player:update()
 	self:check_mobility()
 	self:get_input()

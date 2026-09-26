@@ -16,6 +16,7 @@
 --[[$const]] ENEMY_DIE_SOUND = 60
 
 #include utilities.lua
+#include aabb.lua
 #include character.lua
 #include player.lua
 #include enemy.lua
@@ -95,6 +96,7 @@ function win()
 end
 
 function lose()
+	printh(current_level_id)
 	load_level(current_level_id)
 end
 
@@ -106,15 +108,36 @@ function player:get_gold(pos)
 	end
 end
 
+function check_collisions()
+	for e in all(enemies) do
+		for e2 in all(enemies) do
+			if e != e2 and aabb_sprite(e:pos(), e2:pos()) then
+				printh("enemy collision")
+				if e.collide != nil then
+					e.collide(e2)
+				end
+			end
+		end
+		if aabb_sprite(e:pos(), player:pos()) then
+			printh("player collision")
+			if e.collide != nil then
+				e.collide(player)
+			end
+			player.collide(e)
+		end
+	end
+end
+
 function _update()
 	frame += 1
 	local paused = gui:handle_input()
-	if not paused then
+	if running and not paused then
 		player:update()
 		for e in all(enemies) do
 			e:update()
 		end
 		level:update()
+		check_collisions()
 	end
 end
 

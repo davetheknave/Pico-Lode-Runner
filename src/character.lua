@@ -160,6 +160,9 @@ function Character:update_animation()
 	end
 end
 
+function Character:collide(other)
+end
+
 function Character:update()
 	self:check_mobility()
 	self:get_input()

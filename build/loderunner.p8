@@ -55,6 +55,19 @@ function round(value)
 	return value >= 0 and flr(value + 0.5) or ceil(value - 0.5)
 end
 end
+package._c["aabb"]=function()
+-- returns true if colliding, false if not
+function aabb(x1, y1, w1, h1, x2, y2, w2, h2)
+    return (x1 < x2 + w2)
+            and (x1 + w1 > x2)
+            and (y1 < y2 + h2)
+            and (y1 + h1 > y2)
+end
+
+function aabb_sprite(pos1, pos2)
+    return aabb(pos1.x * 8, pos1.y * 8, 8, 8, pos2.x * 8, pos2.y * 8, 8, 8)
+end
+end
 package._c["character"]=function()
 -- character states
 --[[$const]] STATE_STANDING = 1
@@ -218,6 +231,9 @@ function Character:update_animation()
 	end
 end
 
+function Character:collide(other)
+end
+
 function Character:update()
 	self:check_mobility()
 	self:get_input()
@@ -283,6 +299,10 @@ function Player:get_input()
 			self.dy = 0
 		end
 	end
+end
+
+function Player:collide(other)
+	lose()
 end
 
 function Player:update()
@@ -708,6 +728,7 @@ end
 --[[$const]] ENEMY_DIE_SOUND = 60
 
 require("utilities")
+require("aabb")
 require("character")
 require("player")
 require("enemy")
@@ -787,6 +808,7 @@ function win()
 end
 
 function lose()
+	printh(current_level_id)
 	load_level(current_level_id)
 end
 
@@ -798,15 +820,36 @@ function player:get_gold(pos)
 	end
 end
 
+function check_collisions()
+	for e in all(enemies) do
+		for e2 in all(enemies) do
+			if e != e2 and aabb_sprite(e:pos(), e2:pos()) then
+				printh("enemy collision")
+				if e.collide != nil then
+					e.collide(e2)
+				end
+			end
+		end
+		if aabb_sprite(e:pos(), player:pos()) then
+			printh("player collision")
+			if e.collide != nil then
+				e.collide(player)
+			end
+			player.collide(e)
+		end
+	end
+end
+
 function _update()
 	frame += 1
 	local paused = gui:handle_input()
-	if not paused then
+	if running and not paused then
 		player:update()
 		for e in all(enemies) do
 			e:update()
 		end
 		level:update()
+		check_collisions()
 	end
 end
 
