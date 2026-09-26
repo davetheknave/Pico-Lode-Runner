@@ -121,6 +121,7 @@ package._c["character"]=function()
 --[[$const]] STATE_SHIMMYING = 5
 --[[$const]] STATE_FALLING = 6
 --[[$const]] STATE_DYING = 7
+--[[$const]] STATE_LADDER = 8
 -- Other constants
 --[[$const]] SHOOT_DURATION = 0.5
 
@@ -131,7 +132,7 @@ Character = {
 	dy = 0,
 	state = STATE_STANDING,
 	facing_left = false,
-	animation = STATE_STANDING,
+	-- animation = STATE_STANDING,
 	frame = 0,
 	sprite = 1, -- 1 for player, 49 for enemy
 	down_allowed = false,
@@ -148,7 +149,12 @@ Character.animations = {
 		frames = { { sprite = 0 } }
 	}),
 	[STATE_WALKING] = make_animation({
-		frames = { { sprite = 1 }, { sprite = 2, bounce = 1 }, { sprite = 3, bounce = 0 }, { sprite = 2, bounce = 1 } }
+		frames = {
+			{ sprite = 1, bounce = -1 },
+			{ sprite = 2, bounce = 0 },
+			{ sprite = 3, bounce = -1 },
+			{ sprite = 2, bounce = 0 }
+		}
 	}),
 	[STATE_SHOOTING] = make_animation({
 		frames = { { sprite = 4 } }
@@ -165,6 +171,9 @@ Character.animations = {
 	[STATE_DYING] = make_animation({
 		frames = { { sprite = 9 }, { sprite = 10 }, { sprite = 11 } },
 		oneshot = true
+	}),
+	[STATE_LADDER] = make_animation({
+		frames = { { sprite = 6 } }
 	})
 }
 
@@ -280,6 +289,19 @@ function Character:update_movement()
 	if self:check_grounded() then
 		self.y = flr(self.y / 8) * 8
 	end
+	if (self.dx != 0 or self.dy != 0) then
+		if self.state == STATE_STANDING then
+			self.state = STATE_WALKING
+		elseif self.state == STATE_LADDER then
+			self.state = STATE_CLIMBING
+		end
+	else
+		if self.state == STATE_WALKING then
+			self.state = STATE_STANDING
+		elseif self.state == STATE_CLIMBING then
+			self.state = STATE_LADDER
+		end
+	end
 end
 
 function Character:collide(other)
@@ -393,7 +415,6 @@ function Player:reset()
 end
 
 function Player:draw()
-	printh(self.state)
 	if self.has_moved then
 		Character.draw(self)
 	else
@@ -1042,8 +1063,8 @@ __gfx__
 000000001f5555ff1f5555ff1f5555ff1f5555ff1f5555ff1f5555f11f5555f1ffffffffffffffff1f5555f1ff5555ffffff5fff000000000000000000000000
 000000001555555f1555555f1555555f1555555f1555555ff155551ff155551ff0011f5f00ff115ff504405fff04405fff0f40ff000000000000000000000000
 00100100f15404fff15404fff15404fff15404fff15404fff155551ff155551ff006445500f66455f504405ff504f05fff04ff5f000000000000000000000000
-00011000554444ff554444ff554444ff554444ff554444ff1f5555ffff5555fff7764055777640551f4444f11f4004f1fffffff1000000000000000000000000
-00011000f666666f1166661fff666fffff666ffff666666ff666666f16666661f7664455f7664455f666666ff66006fff6ff06ff000000000000000000000000
+00011000554444ff5544441f554444ff554444ff554444ff1f5555ffff5555fff7764055777640551f4444f11f4004f1fffffff1000000000000000000000000
+00011000f666666f1166661fff666ffff1666ffff666666ff666666f16666661f7664455f7664455f666666ff66006fff6ff06ff000000000000000000000000
 00100100f166661f1166700ff1166fff00116ffff1666661f07666f1ff6666fff6664555f66645550f6666f00f66f6f00f6fffff000000000000000000000000
 00000000f177771ff077700ff1177fff071170fff17777ff000777ffff7777ffff66515ffff6515f00777700f0f777fff0ff7fff000000000000000000000000
 00000000ff0000fff00fffffff000fffffff000fff0000fffffff00fff0000ffffff5f11ffff5f11ffffffffffffffffffffffff000000000000000000000000

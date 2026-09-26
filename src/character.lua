@@ -6,6 +6,7 @@
 --[[$const]] STATE_SHIMMYING = 5
 --[[$const]] STATE_FALLING = 6
 --[[$const]] STATE_DYING = 7
+--[[$const]] STATE_LADDER = 8
 -- Other constants
 --[[$const]] SHOOT_DURATION = 0.5
 
@@ -16,7 +17,7 @@ Character = {
 	dy = 0,
 	state = STATE_STANDING,
 	facing_left = false,
-	animation = STATE_STANDING,
+	-- animation = STATE_STANDING,
 	frame = 0,
 	sprite = 1, -- 1 for player, 49 for enemy
 	down_allowed = false,
@@ -33,7 +34,12 @@ Character.animations = {
 		frames = { { sprite = 0 } }
 	}),
 	[STATE_WALKING] = make_animation({
-		frames = { { sprite = 1 }, { sprite = 2, bounce = 1 }, { sprite = 3, bounce = 0 }, { sprite = 2, bounce = 1 } }
+		frames = {
+			{ sprite = 1, bounce = -1 },
+			{ sprite = 2, bounce = 0 },
+			{ sprite = 3, bounce = -1 },
+			{ sprite = 2, bounce = 0 }
+		}
 	}),
 	[STATE_SHOOTING] = make_animation({
 		frames = { { sprite = 4 } }
@@ -50,6 +56,9 @@ Character.animations = {
 	[STATE_DYING] = make_animation({
 		frames = { { sprite = 9 }, { sprite = 10 }, { sprite = 11 } },
 		oneshot = true
+	}),
+	[STATE_LADDER] = make_animation({
+		frames = { { sprite = 6 } }
 	})
 }
 
@@ -164,6 +173,19 @@ function Character:update_movement()
 	end
 	if self:check_grounded() then
 		self.y = flr(self.y / 8) * 8
+	end
+	if (self.dx != 0 or self.dy != 0) then
+		if self.state == STATE_STANDING then
+			self.state = STATE_WALKING
+		elseif self.state == STATE_LADDER then
+			self.state = STATE_CLIMBING
+		end
+	else
+		if self.state == STATE_WALKING then
+			self.state = STATE_STANDING
+		elseif self.state == STATE_CLIMBING then
+			self.state = STATE_LADDER
+		end
 	end
 end
 
