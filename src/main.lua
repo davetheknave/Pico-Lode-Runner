@@ -17,6 +17,7 @@
 
 #include utilities.lua
 #include aabb.lua
+#include animator.lua
 #include character.lua
 #include player.lua
 #include enemy.lua

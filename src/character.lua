@@ -9,16 +9,6 @@
 -- Other constants
 --[[$const]] SHOOT_DURATION = 0.5
 
-local player_animations = {
-	{ 1, 2, 3 },
-	{ 0 },
-	{ 4 },
-	{ 5, 6 },
-	{ 7, 8 },
-	{ 9 },
-	{ 9, 10, 11 }
-}
-
 Character = {
 	x = 0,
 	y = 0,
@@ -38,6 +28,31 @@ Character = {
 }
 Character.__index = Character
 
+Character.animations = {
+	[STATE_STANDING] = make_animation({
+		frames = { { sprite = 0 } }
+	}),
+	[STATE_WALKING] = make_animation({
+		frames = { { sprite = 1 }, { sprite = 2, bounce = 1 }, { sprite = 3, bounce = 0 }, { sprite = 2, bounce = 1 } }
+	}),
+	[STATE_SHOOTING] = make_animation({
+		frames = { { sprite = 4 } }
+	}),
+	[STATE_CLIMBING] = make_animation({
+		frames = { { sprite = 6 }, { sprite = 5 }, { sprite = 6 }, { sprite = 5, flip = true } }
+	}),
+	[STATE_SHIMMYING] = make_animation({
+		frames = { { sprite = 7 }, { sprite = 8 } }
+	}),
+	[STATE_FALLING] = make_animation({
+		frames = { { sprite = 9 } }
+	}),
+	[STATE_DYING] = make_animation({
+		frames = { { sprite = 9 }, { sprite = 10 }, { sprite = 11 } },
+		oneshot = true
+	})
+}
+
 function Character:new()
 	local instance = setmetatable({}, self)
 	return instance
@@ -50,11 +65,6 @@ end
 function Character:move_to(x, y)
 	self.x = x
 	self.y = y
-end
-
-function Character:get_sprite()
-	local loop = player_animations[self.state]
-	return loop[self.frame % #loop + 1] + self.sprite
 end
 
 function Character:check_mobility()
@@ -157,23 +167,21 @@ function Character:update_movement()
 	end
 end
 
-function Character:update_animation()
-	if frame % ANIMATION_RATE == 0 then
-		self.frame += 1
-	end
+function Character:collide(other)
 end
 
-function Character:collide(other)
+function Character:change_state(new_state)
+	self.state = new_state
+	self.animations[self.state]:start()
 end
 
 function Character:update()
 	self:check_mobility()
 	self:get_input()
 	self:update_movement()
-	self:update_animation()
 end
 
 function Character:draw()
-	local sprite = self:get_sprite()
-	spr(sprite, self.x, self.y, 1, 1, self.facing_left)
+	local current_animation = self.animations[self.state]
+	current_animation:draw(self.sprite, self.x, self.y, self.facing_left)
 end

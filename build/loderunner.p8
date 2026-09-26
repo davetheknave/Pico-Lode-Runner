@@ -90,6 +90,28 @@ function distance(pos1, pos2)
     return sqrt(abs(pos1.x - pos2.x) ^ 2 + abs(pos1.y - pos2.y) ^ 2)
 end
 end
+package._c["animator"]=function()
+function make_animation(a)
+    local output = a or {
+        frames = {}
+    }
+    function output:start()
+        self.dt = 0
+    end
+    local function draw_frame(sprite_offset, frame, x, y, flip)
+        -- not equals is used as exclusive or, to ensure double flip is just not flipped
+        spr(frame.sprite + sprite_offset, x, y + (frame.bounce or 0), 1, 1, not flip != not frame.flip)
+    end
+    function output:draw(sprite_offset, x, y, flip)
+        self.dt = self.dt or 0
+        self.dt += 1 / 30
+        local index = flr(self.dt / ANIMATION_RATE * 30) % #self.frames + 1
+        local frame = self.frames[index]
+        draw_frame(sprite_offset, frame, x, y, flip)
+    end
+    return output
+end
+end
 package._c["character"]=function()
 -- character states
 --[[$const]] STATE_STANDING = 1
@@ -101,16 +123,6 @@ package._c["character"]=function()
 --[[$const]] STATE_DYING = 7
 -- Other constants
 --[[$const]] SHOOT_DURATION = 0.5
-
-local player_animations = {
-	{ 1, 2, 3 },
-	{ 0 },
-	{ 4 },
-	{ 5, 6 },
-	{ 7, 8 },
-	{ 9 },
-	{ 9, 10, 11 }
-}
 
 Character = {
 	x = 0,
@@ -131,6 +143,31 @@ Character = {
 }
 Character.__index = Character
 
+Character.animations = {
+	[STATE_STANDING] = make_animation({
+		frames = { { sprite = 0 } }
+	}),
+	[STATE_WALKING] = make_animation({
+		frames = { { sprite = 1 }, { sprite = 2, bounce = 1 }, { sprite = 3, bounce = 0 }, { sprite = 2, bounce = 1 } }
+	}),
+	[STATE_SHOOTING] = make_animation({
+		frames = { { sprite = 4 } }
+	}),
+	[STATE_CLIMBING] = make_animation({
+		frames = { { sprite = 6 }, { sprite = 5 }, { sprite = 6 }, { sprite = 5, flip = true } }
+	}),
+	[STATE_SHIMMYING] = make_animation({
+		frames = { { sprite = 7 }, { sprite = 8 } }
+	}),
+	[STATE_FALLING] = make_animation({
+		frames = { { sprite = 9 } }
+	}),
+	[STATE_DYING] = make_animation({
+		frames = { { sprite = 9 }, { sprite = 10 }, { sprite = 11 } },
+		oneshot = true
+	})
+}
+
 function Character:new()
 	local instance = setmetatable({}, self)
 	return instance
@@ -143,11 +180,6 @@ end
 function Character:move_to(x, y)
 	self.x = x
 	self.y = y
-end
-
-function Character:get_sprite()
-	local loop = player_animations[self.state]
-	return loop[self.frame % #loop + 1] + self.sprite
 end
 
 function Character:check_mobility()
@@ -250,25 +282,23 @@ function Character:update_movement()
 	end
 end
 
-function Character:update_animation()
-	if frame % ANIMATION_RATE == 0 then
-		self.frame += 1
-	end
+function Character:collide(other)
 end
 
-function Character:collide(other)
+function Character:change_state(new_state)
+	self.state = new_state
+	self.animations[self.state]:start()
 end
 
 function Character:update()
 	self:check_mobility()
 	self:get_input()
 	self:update_movement()
-	self:update_animation()
 end
 
 function Character:draw()
-	local sprite = self:get_sprite()
-	spr(sprite, self.x, self.y, 1, 1, self.facing_left)
+	local current_animation = self.animations[self.state]
+	current_animation:draw(self.sprite, self.x, self.y, self.facing_left)
 end
 end
 package._c["player"]=function()
@@ -344,7 +374,6 @@ function Player:update()
 	if next_tile == GOLD_TILE then
 		self:get_gold(self:pos())
 	end
-	self:update_animation()
 end
 
 function Player:new()
@@ -364,6 +393,7 @@ function Player:reset()
 end
 
 function Player:draw()
+	printh(self.state)
 	if self.has_moved then
 		Character.draw(self)
 	else
@@ -843,6 +873,7 @@ end
 
 require("utilities")
 require("aabb")
+require("animator")
 require("character")
 require("player")
 require("enemy")

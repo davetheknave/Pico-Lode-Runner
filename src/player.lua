@@ -70,7 +70,6 @@ function Player:update()
 	if next_tile == GOLD_TILE then
 		self:get_gold(self:pos())
 	end
-	self:update_animation()
 end
 
 function Player:new()
