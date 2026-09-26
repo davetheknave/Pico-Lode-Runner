@@ -39,6 +39,7 @@ function Level:place_player(player)
             if maptile == PLAYER_START_TILE then
                 mset(x, y, 0)
                 player:move_to(x * 8, y * 8)
+                player:reset()
                 return
             end
         end
@@ -56,6 +57,17 @@ function Level:place_enemies(enemies)
                 enemy:move_to(x * 8, y * 8)
                 enemies[#enemies + 1] = enemy
                 index += 1
+            end
+        end
+    end
+end
+
+function Level:show_secret_ladders()
+    for y = self.mapY, self.mapY + 15 do
+        for x = self.mapX, self.mapX + 15 do
+            local maptile = mget(x, y)
+            if maptile == LADDER_TILE + 1 then
+                mset(x, y, LADDER_TILE)
             end
         end
     end

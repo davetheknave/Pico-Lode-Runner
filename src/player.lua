@@ -50,6 +50,9 @@ function Player:get_input()
 			self.dy = 0
 		end
 	end
+	if self.dx != 0 or self.dy != 0 or self.state == STATE_SHOOTING then
+		self.has_moved = true
+	end
 end
 
 function Player:collide(other)
@@ -74,5 +77,24 @@ function Player:new()
 	local instance = Character:new()
 	setmetatable(instance, self)
 	instance.sprite = 1
+	instance.has_moved = false
 	return instance
+end
+
+function Player:reset()
+	self.state = STATE_STANDING
+	self.animation = STATE_STANDING
+	self.frame = 0
+	self.has_moved = false
+	self.facing_left = false
+end
+
+function Player:draw()
+	if self.has_moved then
+		Character.draw(self)
+	else
+		if frame % 8 > 3 then
+			Character.draw(self)
+		end
+	end
 end

@@ -24,10 +24,12 @@
 #include gui/window_manager.lua
 #include gui/renderer.lua
 #include gui/lr_widgets.lua
+#include effects.lua
 
 player = Player:new()
 local gui = GUI:new(0, 0)
 frame = 0
+level_loaded = false
 running = false
 current_level_id = 0
 
@@ -73,7 +75,9 @@ function load_level(levelID)
 	level:place_player(player)
 	level:place_enemies(enemies)
 	level:init()
-	running = true
+	effects:horizontal_wipe(3, function() running = true end)
+	level_loaded = true
+	running = false
 end
 
 function _init()
@@ -102,9 +106,8 @@ end
 
 function player:get_gold(pos)
 	sfx(GOLD_SOUND)
-	local won = level:get_gold(round(pos.x), round(pos.y))
-	if won then
-		win()
+	if level:get_gold(round(pos.x), round(pos.y)) then
+		level:show_secret_ladders()
 	end
 end
 
@@ -130,14 +133,20 @@ end
 
 function _update()
 	frame += 1
-	local paused = gui:handle_input()
-	if running and not paused then
+	local paused = gui:handle_input() or not running
+	if level_loaded and not paused then
 		player:update()
+		if not player.has_moved then
+			return
+		end
 		for e in all(enemies) do
 			e:update()
 		end
 		level:update()
 		check_collisions()
+		if level.gold == 0 and round(player:pos().y) == level.mapY then
+			win()
+		end
 	end
 end
 
@@ -157,7 +166,7 @@ end
 
 function _draw()
 	cls()
-	if running then
+	if level_loaded then
 		-- Background
 		palt(15, false)
 		map(112, 048, level.mapX * 8, level.mapY * 8, 128, 128)
@@ -168,6 +177,7 @@ function _draw()
 		for e in all(enemies) do
 			e:draw()
 		end
+		effects:draw(level.mapX * 8, level.mapY * 8)
 	end
 	gui:draw()
 end
