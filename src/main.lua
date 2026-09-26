@@ -61,7 +61,8 @@ function player:shoot(left)
 end
 
 function load_level(levelID)
-	current_level_id = levelID + 1
+	reload()
+	current_level_id = levelID
 	enemies = {}
 	bricks = {}
 	level = Level:new((levels[current_level_id] % 8) * 16, flr(levels[current_level_id] / 8) * 16)
@@ -96,7 +97,6 @@ function win()
 end
 
 function lose()
-	printh(current_level_id)
 	load_level(current_level_id)
 end
 

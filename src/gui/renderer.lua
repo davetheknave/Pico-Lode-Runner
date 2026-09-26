@@ -55,7 +55,7 @@ function GUI:make_grid(items, x, y, w, h, onChoose)
     local cols = 4
     window.selected = 0
     window.onX = function() self:close_window() end
-    window.onO = function() self:close_window() onChoose(window.selected) end
+    window.onO = function() self:close_window() onChoose(window.selected + 1) end
     window.onUp = function()
         window.selected = window.selected - cols
         if window.selected < 0 then

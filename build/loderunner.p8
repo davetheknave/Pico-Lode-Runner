@@ -625,7 +625,7 @@ function GUI:make_grid(items, x, y, w, h, onChoose)
     local cols = 4
     window.selected = 0
     window.onX = function() self:close_window() end
-    window.onO = function() self:close_window() onChoose(window.selected) end
+    window.onO = function() self:close_window() onChoose(window.selected + 1) end
     window.onUp = function()
         window.selected = window.selected - cols
         if window.selected < 0 then
@@ -773,7 +773,8 @@ function player:shoot(left)
 end
 
 function load_level(levelID)
-	current_level_id = levelID + 1
+	reload()
+	current_level_id = levelID
 	enemies = {}
 	bricks = {}
 	level = Level:new((levels[current_level_id] % 8) * 16, flr(levels[current_level_id] / 8) * 16)
@@ -783,6 +784,7 @@ function load_level(levelID)
 	frame = 0
 	level:place_player(player)
 	level:place_enemies(enemies)
+	printh(#enemies)
 	level:init()
 	running = true
 end
@@ -808,7 +810,6 @@ function win()
 end
 
 function lose()
-	printh(current_level_id)
 	load_level(current_level_id)
 end
 
