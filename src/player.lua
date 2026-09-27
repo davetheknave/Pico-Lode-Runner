@@ -66,7 +66,7 @@ function Player:update()
 	self:get_input()
 	self:update_movement()
 	-- game logic
-	local next_tile = get_tile(self:pos())
+	local next_tile = mget(self:get_tile():unpack())
 	if next_tile == GOLD_TILE then
 		self:get_gold(self:pos())
 	end

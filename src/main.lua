@@ -15,6 +15,7 @@
 --[[$const]] DIE_SOUND = 61
 --[[$const]] ENEMY_DIE_SOUND = 60
 
+#include vector.lua
 #include utilities.lua
 #include aabb.lua
 #include animator.lua
@@ -60,9 +61,9 @@ levels = {
 function player:shoot(left)
 	sfx(SHOOT_SOUND)
 	if left then
-		level:zap_block(get_floor_left(player:pos()))
+		level:zap_block(player:get_floor_left())
 	else
-		level:zap_block(get_floor_right(player:pos()))
+		level:zap_block(player:get_floor_right())
 	end
 end
 
@@ -87,6 +88,9 @@ end
 function _init()
 	set_palette(0)
 	show_main_menu()
+	local test = Vector:new(2, 3)
+	local tx, ty = test:unpack()
+	printh(test)
 end
 
 function show_main_menu()

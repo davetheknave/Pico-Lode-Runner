@@ -64,11 +64,44 @@ Character.animations = {
 
 function Character:new()
 	local instance = setmetatable({}, self)
+	instance.position = Vector:new()
 	return instance
 end
 
 function Character:pos()
 	return { x = self.x / 8, y = self.y / 8 }
+end
+
+function Character:get_tile()
+	return Vector:new(round(self.x / 8), round(self.y / 8))
+end
+
+function Character:get_floor()
+	return Vector:new(round(self.x / 8), flr(self.y / 8 + 1))
+end
+
+function Character:get_ceiling()
+	return Vector:new(round(self.x / 8), ceil(self.y / 8 - 1))
+end
+
+function Character:get_left()
+	return Vector:new(ceil(self.x / 8 - 1), round(self.y / 8))
+end
+
+function Character:get_right()
+	return Vector:new(flr(self.x / 8 + 1), round(self.y / 8))
+end
+
+function Character:get_floor_left()
+	local floor = self:get_floor()
+	floor.x -= 1
+	return floor
+end
+
+function Character:get_floor_right()
+	local floor = self:get_floor()
+	floor.x += 1
+	return floor
 end
 
 function Character:move_to(x, y)
@@ -90,10 +123,10 @@ function Character:check_mobility()
 		return
 	end
 	-- Get surroundings and determine what movement is possible
-	local below = get_floor(self:pos())
-	local floor = mget(unpack(below))
+	local below = self:get_floor()
+	local floor = mget(below:unpack())
 	local grounded = self:check_grounded()
-	local player_tile = get_tile(self:pos())
+	local player_tile = mget(self:get_tile():unpack())
 	local touching_ladder = player_tile == LADDER_TILE or floor == LADDER_TILE
 
 	self.down_allowed = not grounded
@@ -115,23 +148,23 @@ function Character:check_mobility()
 			self.state = STATE_STANDING
 		end
 	end
-	local ceiling = get_ceiling(self:pos())
-	if fget(mget(unpack(ceiling)), COLLISION_FLAG) or ceiling[2] < level.mapY then
+	local ceiling = self:get_ceiling()
+	if fget(mget(ceiling:unpack()), COLLISION_FLAG) or ceiling.y < level.mapY then
 		self.up_allowed = false
 	end
 	if player_tile == SHIMMY_TILE and self.y % 8 == 0 then
 		self.up_allowed = false
 		self.state = STATE_SHIMMYING
 	end
-	local left = get_left(self:pos())
-	local right = get_right(self:pos())
-	self.left_allowed = not fget(mget(unpack(left)), COLLISION_FLAG) and not (left[1] < level.mapX)
-	self.right_allowed = not fget(mget(unpack(right)), COLLISION_FLAG) and not (right[1] > level.mapX + 16)
+	local left = self:get_left()
+	local right = self:get_right()
+	self.left_allowed = not fget(mget(left:unpack()), COLLISION_FLAG) and not (left.x < level.mapX)
+	self.right_allowed = not fget(mget(right:unpack()), COLLISION_FLAG) and not (right.x > level.mapX + 16)
 
 	local approx_left = mget(round(self:pos().x) - 1, round(self:pos().y))
 	local approx_right = mget(round(self:pos().x) + 1, round(self:pos().y))
-	self.shoot_left_allowed = mget(unpack(get_floor_left(self:pos()))) == BRICK_TILE and not fget(approx_left, BLOCK_ZAP_FLAG)
-	self.shoot_right_allowed = mget(unpack(get_floor_right(self:pos()))) == BRICK_TILE and not fget(approx_right, BLOCK_ZAP_FLAG)
+	self.shoot_left_allowed = mget(self:get_floor_left():unpack()) == BRICK_TILE and not fget(approx_left, BLOCK_ZAP_FLAG)
+	self.shoot_right_allowed = mget(self:get_floor_right():unpack()) == BRICK_TILE and not fget(approx_right, BLOCK_ZAP_FLAG)
 end
 
 function Character:get_input()
@@ -139,8 +172,8 @@ function Character:get_input()
 end
 
 function Character:check_grounded()
-	local floor = get_floor(self:pos())
-	return flr(floor[2]) >= (level.mapY + 16) or fget(mget(unpack(floor)), COLLISION_FLAG)
+	local floor = self:get_floor()
+	return flr(floor.y) >= (level.mapY + 16) or fget(mget(floor:unpack()), COLLISION_FLAG)
 end
 
 function Character:update_movement()

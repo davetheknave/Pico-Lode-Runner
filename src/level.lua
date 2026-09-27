@@ -84,10 +84,10 @@ function Level:count_remaining_gold()
 end
 
 function Level:zap_block(pos)
-    local maptile = mget(unpack(pos))
+    local maptile = mget(pos:unpack())
     if maptile == BRICK_TILE then
         for b in all(self.bricks) do
-            if b[1] == pos[1] and b[2] == pos[2] then
+            if b[1] == pos.x and b[2] == pos.y then
                 b[3] = 0
                 return
             end

@@ -2,55 +2,51 @@ pico-8 cartridge // http://www.pico-8.com
 version 43
 __lua__
 package={loaded={},_c={}}
+package._c["vector"]=function()
+Vector = {
+    x = 0, y = 0
+}
+
+Vector.__index = Vector
+
+function Vector:unpack()
+    return self.x, self.y
+end
+
+Vector.__len = function(_)
+    return 2
+end
+
+function Vector:new(xValue, yValue)
+    local instance = setmetatable({ x = xValue or 0, y = yValue or 0 }, Vector)
+    return instance
+end
+
+function Vector:__tostring()
+    return "(" .. tostring(self.x) .. "," .. tostring(self.y) .. ")"
+end
+
+function Vector:copy()
+    return Vector:new(self.x, self.y)
+end
+
+function manhattan_distance(pos1, pos2)
+    return abs(pos1.x - pos2.x) + abs(pos1.y - pos2.y)
+end
+
+function distance(pos1, pos2)
+    return sqrt(distance2(pos1, pos2))
+end
+
+function distance2(pos1, pos2)
+    return abs(pos1.x - pos2.x) ^ 2 + abs(pos1.y - pos2.y) ^ 2
+end
+
+function Vector:__add(pos1, pos2)
+    return Vector:new(pos1.x + pos2.x or pos2[1], pos1.y + pos2.y or pos2[2])
+end
+end
 package._c["utilities"]=function()
-function get_tile(pos)
-	return mget(
-		round(pos.x),
-		round(pos.y)
-	)
-end
-
-function get_floor(pos)
-	return {
-		round(pos.x),
-		pos.y + 1
-	}
-end
-
-function get_floor_left(pos)
-	return {
-		round(pos.x) - 1,
-		pos.y + 1
-	}
-end
-function get_floor_right(pos)
-	return {
-		round(pos.x) + 1,
-		pos.y + 1
-	}
-end
-
-function get_ceiling(pos)
-	return {
-		round(pos.x),
-		ceil(pos.y - 1)
-	}
-end
-
-function get_left(pos)
-	return {
-		ceil(pos.x - 1),
-		round(pos.y)
-	}
-end
-
-function get_right(pos)
-	return {
-		pos.x + 1,
-		round(pos.y)
-	}
-end
-
 function round(value)
 	return value >= 0 and flr(value + 0.5) or ceil(value - 0.5)
 end
@@ -80,14 +76,6 @@ end
 
 function aabb_sprite(pos1, pos2)
     return aabb(pos1.x * 8, pos1.y * 8, 8, 8, pos2.x * 8, pos2.y * 8, 8, 8)
-end
-
-function manhattan_distance(pos1, pos2)
-    return abs(pos1.x - pos2.x) + abs(pos1.y - pos2.y)
-end
-
-function distance(pos1, pos2)
-    return sqrt(abs(pos1.x - pos2.x) ^ 2 + abs(pos1.y - pos2.y) ^ 2)
 end
 end
 package._c["animator"]=function()
@@ -207,11 +195,44 @@ Character.animations = {
 
 function Character:new()
 	local instance = setmetatable({}, self)
+	instance.position = Vector:new()
 	return instance
 end
 
 function Character:pos()
 	return { x = self.x / 8, y = self.y / 8 }
+end
+
+function Character:get_tile()
+	return Vector:new(round(self.x / 8), round(self.y / 8))
+end
+
+function Character:get_floor()
+	return Vector:new(round(self.x / 8), flr(self.y / 8 + 1))
+end
+
+function Character:get_ceiling()
+	return Vector:new(round(self.x / 8), ceil(self.y / 8 - 1))
+end
+
+function Character:get_left()
+	return Vector:new(ceil(self.x / 8 - 1), round(self.y / 8))
+end
+
+function Character:get_right()
+	return Vector:new(flr(self.x / 8 + 1), round(self.y / 8))
+end
+
+function Character:get_floor_left()
+	local floor = self:get_floor()
+	floor.x -= 1
+	return floor
+end
+
+function Character:get_floor_right()
+	local floor = self:get_floor()
+	floor.x += 1
+	return floor
 end
 
 function Character:move_to(x, y)
@@ -233,10 +254,10 @@ function Character:check_mobility()
 		return
 	end
 	-- Get surroundings and determine what movement is possible
-	local below = get_floor(self:pos())
-	local floor = mget(unpack(below))
+	local below = self:get_floor()
+	local floor = mget(below:unpack())
 	local grounded = self:check_grounded()
-	local player_tile = get_tile(self:pos())
+	local player_tile = mget(self:get_tile():unpack())
 	local touching_ladder = player_tile == LADDER_TILE or floor == LADDER_TILE
 
 	self.down_allowed = not grounded
@@ -258,23 +279,23 @@ function Character:check_mobility()
 			self.state = STATE_STANDING
 		end
 	end
-	local ceiling = get_ceiling(self:pos())
-	if fget(mget(unpack(ceiling)), COLLISION_FLAG) or ceiling[2] < level.mapY then
+	local ceiling = self:get_ceiling()
+	if fget(mget(ceiling:unpack()), COLLISION_FLAG) or ceiling.y < level.mapY then
 		self.up_allowed = false
 	end
 	if player_tile == SHIMMY_TILE and self.y % 8 == 0 then
 		self.up_allowed = false
 		self.state = STATE_SHIMMYING
 	end
-	local left = get_left(self:pos())
-	local right = get_right(self:pos())
-	self.left_allowed = not fget(mget(unpack(left)), COLLISION_FLAG) and not (left[1] < level.mapX)
-	self.right_allowed = not fget(mget(unpack(right)), COLLISION_FLAG) and not (right[1] > level.mapX + 16)
+	local left = self:get_left()
+	local right = self:get_right()
+	self.left_allowed = not fget(mget(left:unpack()), COLLISION_FLAG) and not (left.x < level.mapX)
+	self.right_allowed = not fget(mget(right:unpack()), COLLISION_FLAG) and not (right.x > level.mapX + 16)
 
 	local approx_left = mget(round(self:pos().x) - 1, round(self:pos().y))
 	local approx_right = mget(round(self:pos().x) + 1, round(self:pos().y))
-	self.shoot_left_allowed = mget(unpack(get_floor_left(self:pos()))) == BRICK_TILE and not fget(approx_left, BLOCK_ZAP_FLAG)
-	self.shoot_right_allowed = mget(unpack(get_floor_right(self:pos()))) == BRICK_TILE and not fget(approx_right, BLOCK_ZAP_FLAG)
+	self.shoot_left_allowed = mget(self:get_floor_left():unpack()) == BRICK_TILE and not fget(approx_left, BLOCK_ZAP_FLAG)
+	self.shoot_right_allowed = mget(self:get_floor_right():unpack()) == BRICK_TILE and not fget(approx_right, BLOCK_ZAP_FLAG)
 end
 
 function Character:get_input()
@@ -282,8 +303,8 @@ function Character:get_input()
 end
 
 function Character:check_grounded()
-	local floor = get_floor(self:pos())
-	return flr(floor[2]) >= (level.mapY + 16) or fget(mget(unpack(floor)), COLLISION_FLAG)
+	local floor = self:get_floor()
+	return flr(floor.y) >= (level.mapY + 16) or fget(mget(floor:unpack()), COLLISION_FLAG)
 end
 
 function Character:update_movement()
@@ -420,7 +441,7 @@ function Player:update()
 	self:get_input()
 	self:update_movement()
 	-- game logic
-	local next_tile = get_tile(self:pos())
+	local next_tile = mget(self:get_tile():unpack())
 	if next_tile == GOLD_TILE then
 		self:get_gold(self:pos())
 	end
@@ -586,10 +607,10 @@ function Level:count_remaining_gold()
 end
 
 function Level:zap_block(pos)
-    local maptile = mget(unpack(pos))
+    local maptile = mget(pos:unpack())
     if maptile == BRICK_TILE then
         for b in all(self.bricks) do
-            if b[1] == pos[1] and b[2] == pos[2] then
+            if b[1] == pos.x and b[2] == pos.y then
                 b[3] = 0
                 return
             end
@@ -977,6 +998,7 @@ end
 --[[$const]] DIE_SOUND = 61
 --[[$const]] ENEMY_DIE_SOUND = 60
 
+require("vector")
 require("utilities")
 require("aabb")
 require("animator")
@@ -1022,9 +1044,9 @@ levels = {
 function player:shoot(left)
 	sfx(SHOOT_SOUND)
 	if left then
-		level:zap_block(get_floor_left(player:pos()))
+		level:zap_block(player:get_floor_left())
 	else
-		level:zap_block(get_floor_right(player:pos()))
+		level:zap_block(player:get_floor_right())
 	end
 end
 
@@ -1049,6 +1071,9 @@ end
 function _init()
 	set_palette(0)
 	show_main_menu()
+	local test = Vector:new(2, 3)
+	local tx, ty = test:unpack()
+	printh(test)
 end
 
 function show_main_menu()
@@ -1166,8 +1191,8 @@ __gfx__
 00000000ffaa99ffffaa99ffffaa99ffffaa99ffffaa99ffff999affff999affffffffffffffffffff99aaffff9999ffffff9fff000000000000000000000000
 00000000fa99999ffa99999ffa99999ffa99999ffa99999ff99999aff99999aff0011f9f00ff119ff99999afff99999fff9f89ff000000000000000000000000
 00000000fa9981fffa9981fffa9981fffa9981fffa9981fff99999aff99999aff00a889900faa899f918819ff918f19fff18ff9f000000000000000000000000
-00000000f99988fff99988fff99988fff99988fff99988fff999999ff999999ff99a8199999a8199198888911f8008f1fffffff1000000000000000000000000
-00000000faaaaaaf11aaaa1fffaaafffffaaaffffaaaaaaffaaaaaaf1aaaaaa1f9aa999af9aa999afaaaaaaffaa00afffaff0aff000000000000000000000000
+00000000f99988fff99988fff99988fff99988fff99988fff999999ff999999ff99a8199999a8199198888911f8888f1fffffff1000000000000000000000000
+00000000faaaaaaf11aaaa1fffaaafffffaaaffffaaaaaaffaaaaaaf1aaaaaa1f9aa999af9aa999afaaaaaaffaaaaafffaff0aff000000000000000000000000
 00000000f1aaaa1f11aa900ff11aafff0011affff1aaaaa1f09aaaf1ffaaaafffaaa999afaaa999affaaaaff0faafaf00fafffff000000000000000000000000
 00000000f199991ff099900ff1199fff091190fff19999f1000999ffff9999ffffaa9aaffffa9aaf00999900f0f999fff0ff9fff000000000000000000000000
 00000000ff0000fff00fffffff000fffffff000fff0000fffffff00fff0000ffffffffffffffffff00ffff00ffffffffffffffff000000000000000000000000
@@ -1267,7 +1292,6 @@ dddddddddddddddddedededeededededdddddddddddddddddedededeededededdddddddddddddddd
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006060606060606068606060606060606
 12121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212
 12121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121207070707070707078707070707070707
-
 __gff__
 0000000000000000000000000000000000858500840084008400008484000080808582828282828080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -1369,69 +1393,3 @@ __sfx__
 010400001d54324563005030050300503005030050300503115331855300503005030050300503005030050311523185430050300503005030050300503005031151318523005030050300503005030050300503
 080300002841328433284132843328413284332841328433284132843324403004030040300403004030040300403004030040300403004030040300403004030040300403004030040300403004030040300403
 791000002953535555355053550500500095002f50000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500
-__music__
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-00 41424344
-
