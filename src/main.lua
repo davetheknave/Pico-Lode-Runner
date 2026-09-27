@@ -18,6 +18,7 @@
 #include utilities.lua
 #include aabb.lua
 #include animator.lua
+#include palettes.lua
 #include character.lua
 #include player.lua
 #include enemy.lua
@@ -26,6 +27,8 @@
 #include gui/renderer.lua
 #include gui/lr_widgets.lua
 #include effects.lua
+#include noise.lua
+#include background-shimmer.lua
 
 player = Player:new()
 local gui = GUI:new(0, 0)
@@ -82,7 +85,7 @@ function load_level(levelID)
 end
 
 function _init()
-	set_palette()
+	set_palette(0)
 	show_main_menu()
 end
 
@@ -151,18 +154,9 @@ function _update()
 	end
 end
 
-function set_palette()
+function set_palette(index)
 	poke(0x5f2e, 1)
-	pal(
-		{
-			[0] = -16, 7, 10, 9, -- Black, white, gold, gold-shade
-			15, 2, 14, 9, -- Skin, Helmet, Shirt, Pants
-			6, -11, -10, -- RSkin, RHelmet, RShirt
-			-12, -10, -- brick1, brick2
-			-- -13, 3,		-- brick1, brick2
-			-15, -14, 1 -- bg1, bg2, bg3
-		}, 1
-	)
+	pal(palettes[index], 1)
 end
 
 function _draw()
@@ -170,7 +164,7 @@ function _draw()
 	if level_loaded then
 		-- Background
 		palt(15, false)
-		map(112, 048, level.mapX * 8, level.mapY * 8, 128, 128)
+		draw_shimmer(frame, level.mapX * 8, level.mapY * 8)
 		palt(15, true)
 		palt(0, false)
 		level:draw()
