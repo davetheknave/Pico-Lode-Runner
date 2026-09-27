@@ -1,119 +1,119 @@
 pico-8 cartridge // http://www.pico-8.com
 version 43
 __lua__
-package = { loaded = {}, _c = {} }
-package._c["utilities"] = function()
-	function get_tile(pos)
-		return mget(
-			round(pos.x),
-			round(pos.y)
-		)
-	end
+package={loaded={},_c={}}
+package._c["utilities"]=function()
+function get_tile(pos)
+	return mget(
+		round(pos.x),
+		round(pos.y)
+	)
+end
 
-	function get_floor(pos)
-		return {
-			round(pos.x),
-			pos.y + 1
-		}
-	end
+function get_floor(pos)
+	return {
+		round(pos.x),
+		pos.y + 1
+	}
+end
 
-	function get_floor_left(pos)
-		return {
-			round(pos.x) - 1,
-			pos.y + 1
-		}
-	end
-	function get_floor_right(pos)
-		return {
-			round(pos.x) + 1,
-			pos.y + 1
-		}
-	end
+function get_floor_left(pos)
+	return {
+		round(pos.x) - 1,
+		pos.y + 1
+	}
+end
+function get_floor_right(pos)
+	return {
+		round(pos.x) + 1,
+		pos.y + 1
+	}
+end
 
-	function get_ceiling(pos)
-		return {
-			round(pos.x),
-			ceil(pos.y - 1)
-		}
-	end
+function get_ceiling(pos)
+	return {
+		round(pos.x),
+		ceil(pos.y - 1)
+	}
+end
 
-	function get_left(pos)
-		return {
-			ceil(pos.x - 1),
-			round(pos.y)
-		}
-	end
+function get_left(pos)
+	return {
+		ceil(pos.x - 1),
+		round(pos.y)
+	}
+end
 
-	function get_right(pos)
-		return {
-			pos.x + 1,
-			round(pos.y)
-		}
-	end
+function get_right(pos)
+	return {
+		pos.x + 1,
+		round(pos.y)
+	}
+end
 
-	function round(value)
-		return value >= 0 and flr(value + 0.5) or ceil(value - 0.5)
-	end
+function round(value)
+	return value >= 0 and flr(value + 0.5) or ceil(value - 0.5)
+end
 
-	function filter_inplace(arr, func)
-		local new_index = 1
-		local size_orig = #arr
-		for old_index, v in ipairs(arr) do
-			if func(v, old_index) then
-				arr[new_index] = v
-				new_index = new_index + 1
-			end
+function filter_inplace(arr, func)
+	local new_index = 1
+	local size_orig = #arr
+	for old_index, v in ipairs(arr) do
+		if func(v, old_index) then
+			arr[new_index] = v
+			new_index = new_index + 1
 		end
-		for i = new_index, size_orig do
-			arr[i] = nil
-		end
+	end
+	for i = new_index, size_orig do
+		arr[i] = nil
 	end
 end
-package._c["aabb"] = function()
-	-- returns true if colliding, false if not
-	function aabb(x1, y1, w1, h1, x2, y2, w2, h2)
-		return (x1 < x2 + w2)
-				and (x1 + w1 > x2)
-				and (y1 < y2 + h2)
-				and (y1 + h1 > y2)
-	end
-
-	function aabb_sprite(pos1, pos2)
-		return aabb(pos1.x * 8, pos1.y * 8, 8, 8, pos2.x * 8, pos2.y * 8, 8, 8)
-	end
-
-	function manhattan_distance(pos1, pos2)
-		return abs(pos1.x - pos2.x) + abs(pos1.y - pos2.y)
-	end
-
-	function distance(pos1, pos2)
-		return sqrt(abs(pos1.x - pos2.x) ^ 2 + abs(pos1.y - pos2.y) ^ 2)
-	end
 end
-package._c["animator"] = function()
-	function make_animation(a)
-		local output = a or {
-			frames = {}
-		}
-		function output:start()
-			self.dt = 0
-		end
-		local function draw_frame(sprite_offset, frame, x, y, flip)
-			-- not equals is used as exclusive or, to ensure double flip is just not flipped
-			spr(frame.sprite + sprite_offset, x, y + (frame.bounce or 0), 1, 1, not flip != not frame.flip)
-		end
-		function output:draw(sprite_offset, x, y, flip)
-			self.dt = self.dt or 0
-			self.dt += 1 / 30
-			local index = flr(self.dt / ANIMATION_RATE * 30) % #self.frames + 1
-			local frame = self.frames[index]
-			draw_frame(sprite_offset, frame, x, y, flip)
-		end
-		return output
-	end
+package._c["aabb"]=function()
+-- returns true if colliding, false if not
+function aabb(x1, y1, w1, h1, x2, y2, w2, h2)
+    return (x1 < x2 + w2)
+            and (x1 + w1 > x2)
+            and (y1 < y2 + h2)
+            and (y1 + h1 > y2)
 end
-package._c["palettes"] = function()
-	--[[
+
+function aabb_sprite(pos1, pos2)
+    return aabb(pos1.x * 8, pos1.y * 8, 8, 8, pos2.x * 8, pos2.y * 8, 8, 8)
+end
+
+function manhattan_distance(pos1, pos2)
+    return abs(pos1.x - pos2.x) + abs(pos1.y - pos2.y)
+end
+
+function distance(pos1, pos2)
+    return sqrt(abs(pos1.x - pos2.x) ^ 2 + abs(pos1.y - pos2.y) ^ 2)
+end
+end
+package._c["animator"]=function()
+function make_animation(a)
+    local output = a or {
+        frames = {}
+    }
+    function output:start()
+        self.dt = 0
+    end
+    local function draw_frame(sprite_offset, frame, x, y, flip)
+        -- not equals is used as exclusive or, to ensure double flip is just not flipped
+        spr(frame.sprite + sprite_offset, x, y + (frame.bounce or 0), 1, 1, not flip != not frame.flip)
+    end
+    function output:draw(sprite_offset, x, y, flip)
+        self.dt = self.dt or 0
+        self.dt += 1 / 30
+        local index = flr(self.dt / ANIMATION_RATE * 30) % #self.frames + 1
+        local frame = self.frames[index]
+        draw_frame(sprite_offset, frame, x, y, flip)
+    end
+    return output
+end
+end
+package._c["palettes"]=function()
+--[[
 COLOR LIST: ALL CAPS MEANS DO NOT CHANGE
 black, white, GOLD, GOLD-SHADE
 SKIN, helmet, shirt, pants
@@ -122,852 +122,843 @@ brick1, brick2
 bg-bottom, bg-top, bg-accent
 ]]
 
-	palettes = {
-		[0] = {
-			[0] = -16, 7, 10, 9, -- Black, white, gold, gold-shade
-			15, 2, 14, 9, -- Skin, Helmet, Shirt, Pants
-			6, -11, -10, -- RSkin, RHelmet, RShirt
-			-12, -10, -- brick1, brick2
-			-15, -14, -4 -- bg1, bg2, bg3
-		},
-		[1] = {
-			[0] = -16, 7, 10, 9, -- Black, white, gold, gold-shade
-			15, 2, 14, 9, -- Skin, Helmet, Shirt, Pants
-			6, -11, -10, -- RSkin, RHelmet, RShirt
-			-12, -10, -- brick1, brick2
-			-15, -14, -4 -- bg1, bg2, bg3
+palettes = {
+    [0] = {
+	    [0] = -16, 7, 10, 9, -- Black, white, gold, gold-shade
+		15, 2, 14, 9, -- Skin, Helmet, Shirt, Pants
+		6, -11, -10, -- RSkin, RHelmet, RShirt
+		-12, -10, -- brick1, brick2
+		-15, -14, -4 -- bg1, bg2, bg3
+    },
+    [1] = {
+	    [0] = -16, 7, 10, 9, -- Black, white, gold, gold-shade
+		15, 2, 14, 9, -- Skin, Helmet, Shirt, Pants
+		6, -11, -10, -- RSkin, RHelmet, RShirt
+		-12, -10, -- brick1, brick2
+		-15, -14, -4 -- bg1, bg2, bg3
+    },
+
+}
+end
+package._c["character"]=function()
+-- character states
+--[[$const]] STATE_STANDING = 1
+--[[$const]] STATE_WALKING = 2
+--[[$const]] STATE_SHOOTING = 3
+--[[$const]] STATE_CLIMBING = 4
+--[[$const]] STATE_SHIMMYING = 5
+--[[$const]] STATE_FALLING = 6
+--[[$const]] STATE_DYING = 7
+--[[$const]] STATE_LADDER = 8
+-- Other constants
+--[[$const]] SHOOT_DURATION = 0.5
+
+Character = {
+	x = 0,
+	y = 0,
+	dx = 0,
+	dy = 0,
+	state = STATE_STANDING,
+	facing_left = false,
+	-- animation = STATE_STANDING,
+	frame = 0,
+	sprite = 1, -- 1 for player, 49 for enemy
+	down_allowed = false,
+	up_allowed = false,
+	left_allowed = false,
+	right_allowed = false,
+	shoot_left_allowed = false,
+	shoot_right_allowed = false
+}
+Character.__index = Character
+
+Character.animations = {
+	[STATE_STANDING] = make_animation({
+		frames = { { sprite = 0 } }
+	}),
+	[STATE_WALKING] = make_animation({
+		frames = {
+			{ sprite = 1, bounce = -1 },
+			{ sprite = 2, bounce = 0 },
+			{ sprite = 3, bounce = -1 },
+			{ sprite = 2, bounce = 0 }
 		}
-	}
+	}),
+	[STATE_SHOOTING] = make_animation({
+		frames = { { sprite = 4 } }
+	}),
+	[STATE_CLIMBING] = make_animation({
+		frames = { { sprite = 6 }, { sprite = 5 }, { sprite = 6 }, { sprite = 5, flip = true } }
+	}),
+	[STATE_SHIMMYING] = make_animation({
+		frames = { { sprite = 7 }, { sprite = 8 } }
+	}),
+	[STATE_FALLING] = make_animation({
+		frames = { { sprite = 9 } }
+	}),
+	[STATE_DYING] = make_animation({
+		frames = { { sprite = 9 }, { sprite = 10 }, { sprite = 11 } },
+		oneshot = true
+	}),
+	[STATE_LADDER] = make_animation({
+		frames = { { sprite = 6 } }
+	})
+}
+
+function Character:new()
+	local instance = setmetatable({}, self)
+	return instance
 end
-package._c["character"] = function()
-	-- character states
-	--[[$const]]
-	STATE_STANDING = 1
-	--[[$const]]
-	STATE_WALKING = 2
-	--[[$const]]
-	STATE_SHOOTING = 3
-	--[[$const]]
-	STATE_CLIMBING = 4
-	--[[$const]]
-	STATE_SHIMMYING = 5
-	--[[$const]]
-	STATE_FALLING = 6
-	--[[$const]]
-	STATE_DYING = 7
-	--[[$const]]
-	STATE_LADDER = 8
-	-- Other constants
-	--[[$const]]
-	SHOOT_DURATION = 0.5
 
-	Character = {
-		x = 0,
-		y = 0,
-		dx = 0,
-		dy = 0,
-		state = STATE_STANDING,
-		facing_left = false,
-		-- animation = STATE_STANDING,
-		frame = 0,
-		sprite = 1, -- 1 for player, 49 for enemy
-		down_allowed = false,
-		up_allowed = false,
-		left_allowed = false,
-		right_allowed = false,
-		shoot_left_allowed = false,
-		shoot_right_allowed = false
-	}
-	Character.__index = Character
+function Character:pos()
+	return { x = self.x / 8, y = self.y / 8 }
+end
 
-	Character.animations = {
-		[STATE_STANDING] = make_animation({
-			frames = { { sprite = 0 } }
-		}),
-		[STATE_WALKING] = make_animation({
-			frames = {
-				{ sprite = 1, bounce = -1 },
-				{ sprite = 2, bounce = 0 },
-				{ sprite = 3, bounce = -1 },
-				{ sprite = 2, bounce = 0 }
-			}
-		}),
-		[STATE_SHOOTING] = make_animation({
-			frames = { { sprite = 4 } }
-		}),
-		[STATE_CLIMBING] = make_animation({
-			frames = { { sprite = 6 }, { sprite = 5 }, { sprite = 6 }, { sprite = 5, flip = true } }
-		}),
-		[STATE_SHIMMYING] = make_animation({
-			frames = { { sprite = 7 }, { sprite = 8 } }
-		}),
-		[STATE_FALLING] = make_animation({
-			frames = { { sprite = 9 } }
-		}),
-		[STATE_DYING] = make_animation({
-			frames = { { sprite = 9 }, { sprite = 10 }, { sprite = 11 } },
-			oneshot = true
-		}),
-		[STATE_LADDER] = make_animation({
-			frames = { { sprite = 6 } }
-		})
-	}
+function Character:move_to(x, y)
+	self.x = x
+	self.y = y
+end
 
-	function Character:new()
-		local instance = setmetatable({}, self)
-		return instance
-	end
-
-	function Character:pos()
-		return { x = self.x / 8, y = self.y / 8 }
-	end
-
-	function Character:move_to(x, y)
-		self.x = x
-		self.y = y
-	end
-
-	function Character:check_mobility()
-		if self.state == STATE_SHOOTING then
-			if time() - self.last_state_change >= SHOOT_DURATION then
-				self.state = STATE_STANDING
-			end
-		end
-		if self.state == STATE_SHOOTING then
-			self.left_allowed = false
-			self.right_allowed = false
-			self.down_allowed = false
-			self.up_allowed = false
-			return
-		end
-		-- Get surroundings and determine what movement is possible
-		local below = get_floor(self:pos())
-		local floor = mget(unpack(below))
-		local grounded = self:check_grounded()
-		local player_tile = get_tile(self:pos())
-		local touching_ladder = player_tile == LADDER_TILE or floor == LADDER_TILE
-
-		self.down_allowed = not grounded
-
-		if floor == LADDER_TILE or grounded then
+function Character:check_mobility()
+	if self.state == STATE_SHOOTING then
+		if time() - self.last_state_change >= SHOOT_DURATION then
 			self.state = STATE_STANDING
-		else
-			self.state = STATE_FALLING
 		end
-
+	end
+	if self.state == STATE_SHOOTING then
+		self.left_allowed = false
+		self.right_allowed = false
+		self.down_allowed = false
 		self.up_allowed = false
-		if touching_ladder then
-			if not grounded then
-				self.state = STATE_CLIMBING
-			end
-			if not ((self.y % 8 == 0) and not (player_tile == LADDER_TILE)) then
-				self.up_allowed = true
-			else
-				self.state = STATE_STANDING
-			end
-		end
-		local ceiling = get_ceiling(self:pos())
-		if fget(mget(unpack(ceiling)), COLLISION_FLAG) or ceiling[2] < level.mapY then
-			self.up_allowed = false
-		end
-		if player_tile == SHIMMY_TILE and self.y % 8 == 0 then
-			self.up_allowed = false
-			self.state = STATE_SHIMMYING
-		end
-		local left = get_left(self:pos())
-		local right = get_right(self:pos())
-		self.left_allowed = not fget(mget(unpack(left)), COLLISION_FLAG) and not (left[1] < level.mapX)
-		self.right_allowed = not fget(mget(unpack(right)), COLLISION_FLAG) and not (right[1] > level.mapX + 16)
-
-		local approx_left = mget(round(self:pos().x) - 1, round(self:pos().y))
-		local approx_right = mget(round(self:pos().x) + 1, round(self:pos().y))
-		self.shoot_left_allowed = mget(unpack(get_floor_left(self:pos()))) == BRICK_TILE and not fget(approx_left, BLOCK_ZAP_FLAG)
-		self.shoot_right_allowed = mget(unpack(get_floor_right(self:pos()))) == BRICK_TILE and not fget(approx_right, BLOCK_ZAP_FLAG)
+		return
 	end
+	-- Get surroundings and determine what movement is possible
+	local below = get_floor(self:pos())
+	local floor = mget(unpack(below))
+	local grounded = self:check_grounded()
+	local player_tile = get_tile(self:pos())
+	local touching_ladder = player_tile == LADDER_TILE or floor == LADDER_TILE
 
-	function Character:get_input()
-		printh("This shouldn't run")
-	end
+	self.down_allowed = not grounded
 
-	function Character:check_grounded()
-		local floor = get_floor(self:pos())
-		return flr(floor[2]) >= (level.mapY + 16) or fget(mget(unpack(floor)), COLLISION_FLAG)
-	end
-
-	function Character:update_movement()
-		-- the game nudges the player towards the center of the axis they are walking on
-		if self.dx != 0 and self.dy != 0 then
-			printh("Trying to move diagonally")
-		else
-			if self.dx != 0 or self.state == STATE_SHOOTING then
-				if self.y % 8 >= 4 then
-					self.dy = min(self.y % 8, SPEED)
-				else
-					self.dy = max(-(self.y % 8), -SPEED)
-				end
-			end
-			if self.dy != 0 or self.state == STATE_FALLING or self.state == STATE_SHOOTING then
-				if self.x % 8 >= 4 then
-					self.dx = min(self.x % 8, SPEED)
-				else
-					self.dx = max(-(self.x % 8), -SPEED)
-				end
-			end
-		end
-
-		-- Resolve movement
-		self.x += self.dx
-		self.y += self.dy
-
-		if self.state == STATE_FALLING then
-			self.y += GRAVITY
-		end
-		if self:check_grounded() then
-			self.y = flr(self.y / 8) * 8
-		end
-		if (self.dx != 0 or self.dy != 0) then
-			if self.state == STATE_STANDING then
-				self.state = STATE_WALKING
-			elseif self.state == STATE_LADDER then
-				self.state = STATE_CLIMBING
-			end
-		else
-			if self.state == STATE_WALKING then
-				self.state = STATE_STANDING
-			elseif self.state == STATE_CLIMBING then
-				self.state = STATE_LADDER
-			end
-		end
-	end
-
-	function Character:collide(other)
-	end
-
-	function Character:change_state(new_state)
-		self.state = new_state
-		self.animations[self.state]:start()
-	end
-
-	function Character:update()
-		self:check_mobility()
-		self:get_input()
-		self:update_movement()
-	end
-
-	function Character:draw()
-		local current_animation = self.animations[self.state]
-		current_animation:draw(self.sprite, self.x, self.y, self.facing_left)
-	end
-end
-package._c["player"] = function()
-	Player = {}
-	Player.__index = Player
-	setmetatable(Player, { __index = Character })
-
-	function Player:get_input()
-		self.dx = 0
-		self.dy = 0
-		if self.state != STATE_FALLING and self.state != STATE_SHOOTING and self.state != STATE_DYING then
-			if not (btn(0) and btn(1)) then
-				if self.left_allowed and btn(0) then
-					-- left
-					self.facing_left = true
-					self.dx = -SPEED
-				elseif self.right_allowed and btn(1) then
-					--right
-					self.dx = SPEED
-					self.facing_left = false
-				end
-			end
-
-			-- can't move vertical and horizontal. vertical has priority
-			if not (btn(2) and btn(3)) then
-				if self.up_allowed and btn(2) then
-					-- up
-					self.dx = 0
-					self.dy = -SPEED
-				elseif self.down_allowed and btn(3) then
-					-- down
-					self.dx = 0
-					self.dy = SPEED
-				end
-			end
-
-			if self.shoot_left_allowed and btn(4) then
-				-- O
-				self:shoot(true)
-				self.facing_left = true
-				self.state = STATE_SHOOTING
-				self.last_state_change = time()
-				self.dx = 0
-				self.dy = 0
-			end
-			if self.shoot_right_allowed and btn(5) then
-				-- X
-				self:shoot(false)
-				self.facing_left = false
-				self.state = STATE_SHOOTING
-				self.last_state_change = time()
-				self.dx = 0
-				self.dy = 0
-			end
-		end
-		if self.dx != 0 or self.dy != 0 or self.state == STATE_SHOOTING then
-			self.has_moved = true
-		end
-	end
-
-	function Player:collide(other)
-		if manhattan_distance(self:pos(), other:pos()) <= 1 then
-			lose()
-		end
-	end
-
-	function Player:update()
-		self:check_mobility()
-		self:get_input()
-		self:update_movement()
-		-- game logic
-		local next_tile = get_tile(self:pos())
-		if next_tile == GOLD_TILE then
-			self:get_gold(self:pos())
-		end
-	end
-
-	function Player:new()
-		local instance = Character:new()
-		setmetatable(instance, self)
-		instance.sprite = 1
-		instance.has_moved = false
-		return instance
-	end
-
-	function Player:reset()
+	if floor == LADDER_TILE or grounded then
 		self.state = STATE_STANDING
-		self.animation = STATE_STANDING
-		self.frame = 0
-		self.has_moved = false
-		self.facing_left = false
+	else
+		self.state = STATE_FALLING
 	end
 
-	function Player:draw()
-		if self.has_moved then
-			Character.draw(self)
+	self.up_allowed = false
+	if touching_ladder then
+		if not grounded then
+			self.state = STATE_CLIMBING
+		end
+		if not ((self.y % 8 == 0) and not (player_tile == LADDER_TILE)) then
+			self.up_allowed = true
 		else
-			if frame % 8 > 3 then
-				Character.draw(self)
+			self.state = STATE_STANDING
+		end
+	end
+	local ceiling = get_ceiling(self:pos())
+	if fget(mget(unpack(ceiling)), COLLISION_FLAG) or ceiling[2] < level.mapY then
+		self.up_allowed = false
+	end
+	if player_tile == SHIMMY_TILE and self.y % 8 == 0 then
+		self.up_allowed = false
+		self.state = STATE_SHIMMYING
+	end
+	local left = get_left(self:pos())
+	local right = get_right(self:pos())
+	self.left_allowed = not fget(mget(unpack(left)), COLLISION_FLAG) and not (left[1] < level.mapX)
+	self.right_allowed = not fget(mget(unpack(right)), COLLISION_FLAG) and not (right[1] > level.mapX + 16)
+
+	local approx_left = mget(round(self:pos().x) - 1, round(self:pos().y))
+	local approx_right = mget(round(self:pos().x) + 1, round(self:pos().y))
+	self.shoot_left_allowed = mget(unpack(get_floor_left(self:pos()))) == BRICK_TILE and not fget(approx_left, BLOCK_ZAP_FLAG)
+	self.shoot_right_allowed = mget(unpack(get_floor_right(self:pos()))) == BRICK_TILE and not fget(approx_right, BLOCK_ZAP_FLAG)
+end
+
+function Character:get_input()
+	printh("This shouldn't run")
+end
+
+function Character:check_grounded()
+	local floor = get_floor(self:pos())
+	return flr(floor[2]) >= (level.mapY + 16) or fget(mget(unpack(floor)), COLLISION_FLAG)
+end
+
+function Character:update_movement()
+	-- the game nudges the player towards the center of the axis they are walking on
+	if self.dx != 0 and self.dy != 0 then
+		printh("Trying to move diagonally")
+	else
+		if self.dx != 0 or self.state == STATE_SHOOTING then
+			if self.y % 8 >= 4 then
+				self.dy = min(self.y % 8, SPEED)
+			else
+				self.dy = max(-(self.y % 8), -SPEED)
 			end
+		end
+		if self.dy != 0 or self.state == STATE_FALLING or self.state == STATE_SHOOTING then
+			if self.x % 8 >= 4 then
+				self.dx = min(self.x % 8, SPEED)
+			else
+				self.dx = max(-(self.x % 8), -SPEED)
+			end
+		end
+	end
+
+	-- Resolve movement
+	self.x += self.dx
+	self.y += self.dy
+
+	if self.state == STATE_FALLING then
+		self.y += GRAVITY
+	end
+	if self:check_grounded() then
+		self.y = flr(self.y / 8) * 8
+	end
+	if (self.dx != 0 or self.dy != 0) then
+		if self.state == STATE_STANDING then
+			self.state = STATE_WALKING
+		elseif self.state == STATE_LADDER then
+			self.state = STATE_CLIMBING
+		end
+	else
+		if self.state == STATE_WALKING then
+			self.state = STATE_STANDING
+		elseif self.state == STATE_CLIMBING then
+			self.state = STATE_LADDER
 		end
 	end
 end
-package._c["enemy"] = function()
-	Enemy = {}
-	Enemy.__index = Enemy
-	setmetatable(Enemy, { __index = Character })
 
-	function Enemy:new(name)
-		local instance = Character:new()
-		setmetatable(instance, self)
-		instance.sprite = 49
-		instance.name = name
-		return instance
-	end
+function Character:collide(other)
+end
 
-	function Enemy:check_path_to_player()
-		local myy = round(self.y / 8)
-		for x = round(self.x / 8), round(player.x / 8), (self.x < player.x and 1 or -1) do
-			local next_tile = mget(x, myy)
-			-- printh(x .. "," .. myy .. ":" .. next_tile)
-			if next_tile != LADDER_TILE and next_tile != SHIMMY_TILE then
-				local next_ground = mget(x, myy + 1)
-				if next_ground == 0 or next_ground == GOLD_TILE then
-					return false
-				end
-			end
-		end
-		return true
-	end
+function Character:change_state(new_state)
+	self.state = new_state
+	self.animations[self.state]:start()
+end
 
-	-- This will actually be the ai, rather than input
-	function Enemy:get_input()
-		self.dx = 0
-		self.dy = 0
-		-- Rule 1: get player if on same level
-		if abs(player.y - self.y) <= 4 and self:check_path_to_player() then
-			if self.x - player.x > 0 and self.left_allowed then
+function Character:update()
+	self:check_mobility()
+	self:get_input()
+	self:update_movement()
+end
+
+function Character:draw()
+	local current_animation = self.animations[self.state]
+	current_animation:draw(self.sprite, self.x, self.y, self.facing_left)
+end
+end
+package._c["player"]=function()
+Player = {}
+Player.__index = Player
+setmetatable(Player, { __index = Character })
+
+function Player:get_input()
+	self.dx = 0
+	self.dy = 0
+	if self.state != STATE_FALLING and self.state != STATE_SHOOTING and self.state != STATE_DYING then
+		if not (btn(0) and btn(1)) then
+			if self.left_allowed and btn(0) then
+				-- left
+				self.facing_left = true
 				self.dx = -SPEED
-			elseif self.x - player.x < 0 and self.right_allowed then
+			elseif self.right_allowed and btn(1) then
+				--right
 				self.dx = SPEED
+				self.facing_left = false
 			end
+		end
+
+		-- can't move vertical and horizontal. vertical has priority
+		if not (btn(2) and btn(3)) then
+			if self.up_allowed and btn(2) then
+				-- up
+				self.dx = 0
+				self.dy = -SPEED
+			elseif self.down_allowed and btn(3) then
+				-- down
+				self.dx = 0
+				self.dy = SPEED
+			end
+		end
+
+		if self.shoot_left_allowed and btn(4) then
+			-- O
+			self:shoot(true)
+			self.facing_left = true
+			self.state = STATE_SHOOTING
+			self.last_state_change = time()
+			self.dx = 0
+			self.dy = 0
+		end
+		if self.shoot_right_allowed and btn(5) then
+			-- X
+			self:shoot(false)
+			self.facing_left = false
+			self.state = STATE_SHOOTING
+			self.last_state_change = time()
+			self.dx = 0
+			self.dy = 0
+		end
+	end
+	if self.dx != 0 or self.dy != 0 or self.state == STATE_SHOOTING then
+		self.has_moved = true
+	end
+end
+
+function Player:collide(other)
+	if manhattan_distance(self:pos(), other:pos()) <= 1 then
+		lose()
+	end
+end
+
+function Player:update()
+	self:check_mobility()
+	self:get_input()
+	self:update_movement()
+	-- game logic
+	local next_tile = get_tile(self:pos())
+	if next_tile == GOLD_TILE then
+		self:get_gold(self:pos())
+	end
+end
+
+function Player:new()
+	local instance = Character:new()
+	setmetatable(instance, self)
+	instance.sprite = 1
+	instance.has_moved = false
+	return instance
+end
+
+function Player:reset()
+	self.state = STATE_STANDING
+	self.animation = STATE_STANDING
+	self.frame = 0
+	self.has_moved = false
+	self.facing_left = false
+end
+
+function Player:draw()
+	if self.has_moved then
+		Character.draw(self)
+	else
+		if frame % 8 > 3 then
+			Character.draw(self)
 		end
 	end
 end
-package._c["level"] = function()
-	-- tiles/sprites
-	--[[$const]]
-	GOLD_TILE = 24
-	--[[$const]]
-	PLAYER_START_TILE = 25
-	--[[$const]]
-	ENEMY_SPAWN_TILE = 26
-	--[[$const]]
-	LADDER_TILE = 20
-	--[[$const]]
-	SHIMMY_TILE = 22
-	--[[$const]]
-	BRICK_TILE = 33
-
-	Level = {
-		mapX = 0,
-		mapY = 0,
-		bricks = {},
-		gold = 0
-	}
-	Level.__index = Level
-
-	function Level:new(x, y)
-		local instance = setmetatable({}, self)
-		self.mapX = x
-		self.mapY = y
-		return instance
-	end
-
-	function Level:index_bricks()
-		for y = self.mapY, self.mapY + 15 do
-			for x = self.mapX, self.mapX + 15 do
-				local maptile = mget(x, y)
-				if maptile == BRICK_TILE then
-					self.bricks[#self.bricks + 1] = { x, y, -1 }
-				end
-			end
-		end
-	end
-
-	function Level:place_player(player)
-		for y = self.mapY, self.mapY + 15 do
-			for x = self.mapX, self.mapX + 15 do
-				local maptile = mget(x, y)
-				if maptile == PLAYER_START_TILE then
-					mset(x, y, 0)
-					player:move_to(x * 8, y * 8)
-					player:reset()
-					return
-				end
-			end
-		end
-	end
-
-	function Level:place_enemies(enemies)
-		local index = 0
-		for y = self.mapY, self.mapY + 15 do
-			for x = self.mapX, self.mapX + 15 do
-				local maptile = mget(x, y)
-				if maptile == ENEMY_SPAWN_TILE then
-					mset(x, y, 0)
-					local enemy = Enemy:new(index)
-					enemy:move_to(x * 8, y * 8)
-					enemies[#enemies + 1] = enemy
-					index += 1
-				end
-			end
-		end
-	end
-
-	function Level:show_secret_ladders()
-		for y = self.mapY, self.mapY + 15 do
-			for x = self.mapX, self.mapX + 15 do
-				local maptile = mget(x, y)
-				if maptile == LADDER_TILE + 1 then
-					mset(x, y, LADDER_TILE)
-				end
-			end
-		end
-	end
-
-	function Level:count_remaining_gold()
-		for y = self.mapY, self.mapY + 15 do
-			for x = self.mapX, self.mapX + 15 do
-				if mget(x, y) == GOLD_TILE then
-					self.gold += 1
-				end
-			end
-		end
-	end
-
-	function Level:zap_block(pos)
-		local maptile = mget(unpack(pos))
-		if maptile == BRICK_TILE then
-			for b in all(self.bricks) do
-				if b[1] == pos[1] and b[2] == pos[2] then
-					b[3] = 0
-					return
-				end
-			end
-		end
-	end
-
-	--- Removes gold from the level
-	--- @return whether or not the player has taken all gold in the level
-	function Level:get_gold(x, y)
-		mset(x, y, 0)
-		self.gold -= 1
-		if self.gold <= 0 then
-			return true
-		else
-			return false
-		end
-	end
-
-	function Level:init()
-		self:index_bricks()
-		self:count_remaining_gold()
-	end
-
-	function Level:update()
-		-- update zapped bricks
-		for b in all(self.bricks) do
-			if b[3] != -1 then
-				-- Zapping
-				if b[3] <= 5 then
-					mset(b[1], b[2], BRICK_TILE + b[3])
-				elseif b[3] >= BRICK_END then
-					mset(b[1], b[2], BRICK_TILE + 5 - (b[3] - BRICK_END) + 1)
-				end
-				-- Unzapping
-				if b[3] > BRICK_END + 5 then
-					b[3] = -1
-					return
-				end
-				b[3] += 1 -- tick up
-			end
-		end
-	end
-
-	function Level:draw()
-		map(self.mapX, self.mapY, self.mapX * 8, self.mapY * 8, 16, 16, 0x8F)
-	end
 end
-package._c["gui/window_manager"] = function()
-	Window = {}
-	Window.__index = Window
+package._c["enemy"]=function()
+Enemy = {}
+Enemy.__index = Enemy
+setmetatable(Enemy, { __index = Character })
 
-	function Window:new(owner)
-		local instance = setmetatable({ owner = owner }, self)
-		return instance
-	end
-
-	GUI = {
-		windows = {},
-		xOffset = 0,
-		yOffset = 0
-	}
-	GUI.__index = GUI
-
-	function GUI:new(x, y)
-		local instance = setmetatable(
-			{
-				windows = {},
-				xOffset = x,
-				yOffset = y
-			}, self
-		)
-		return instance
-	end
-
-	function GUI:close_window()
-		deli(self.windows)
-	end
-
-	-- returns true if input shouldn't continue to bubble
-	function GUI:handle_input()
-		if #self.windows > 0 then
-			local top = self.windows[#self.windows]
-			if btnp(4) then
-				if top.onO != nil then
-					top.onO()
-				end
-			elseif btnp(5) then
-				if top.onX != nil then
-					top.onX()
-				end
-			elseif btnp(2) then
-				if top.onUp != nil then
-					top.onUp()
-				end
-			elseif btnp(3) then
-				if top.onDown != nil then
-					top.onDown()
-				end
-			elseif btnp(1) then
-				if top.onRight != nil then
-					top.onRight()
-				end
-			elseif btnp(0) then
-				if top.onLeft != nil then
-					top.onLeft()
-				end
-			end
-			return true
-		else
-			return false
-		end
-	end
-
-	function GUI:draw()
-		for w in all(self.windows) do
-			if w.draw != nil then
-				w.draw()
-			end
-		end
-	end
+function Enemy:new(name)
+    local instance = Character:new()
+    setmetatable(instance, self)
+    instance.sprite = 49
+    instance.name = name
+    return instance
 end
-package._c["gui/renderer"] = function()
-	function GUI:draw_window(x, y, w, h)
-		local cornerthing = 1
-		local outline_color = 0
-		local fill_color = 1
-		rrectfill(self.xOffset + x, self.yOffset + y, w, h, 1, fill_color)
-		rrect(self.xOffset + x, self.yOffset + y, w, h, 1, outline_color)
-		circfill(self.xOffset + x, self.yOffset + y, cornerthing, outline_color)
-		circfill(self.xOffset + x + w - 1, self.yOffset + y, cornerthing, outline_color)
-		circfill(self.xOffset + x, self.yOffset + y + h - 1, cornerthing, outline_color)
-		circfill(self.xOffset + x + w - 1, self.yOffset + y + h - 1, cornerthing, outline_color)
-	end
 
-	function GUI:draw_textbox(message, x, y, w, h)
-		local padding = 3
-		self:draw_window(x, y, w, h)
-		print(message, self.xOffset + x + padding, self.yOffset + y + padding)
-	end
-
-	function GUI:draw_list(items, selection, x, y, w, h)
-		self:draw_window(x, y, w, h)
-		local index = 0
-		for i in all(items) do
-			print(i, self.xOffset + x + 2 + 4, self.yOffset + y + 7 * index + 2)
-			index += 1
-		end
-		circ(self.xOffset + x + 3, self.yOffset + y + 4 + 7 * selection, 1)
-	end
-
-	function GUI:draw_grid(items, selected, x, y, w, h, cols)
-		self:draw_window(x, y, w, h)
-		local rows = ceil(#items / cols)
-		for row = 1, rows do
-			for column = 1, cols do
-				local index = (row - 1) * cols + column
-				if index <= #items then
-					local itemX = self.xOffset + x + (column - 1) * (w - 2) / cols + 2
-					local itemY = self.yOffset + y + (row - 1) * (h - 2) / rows + 2
-					self:draw_grid_item(items[index], index == selected, itemX, itemY, (w - 2) / cols - 1, (h - 2) / rows - 1)
-				end
-			end
-		end
-	end
-
-	function GUI:draw_grid_item(text, selected, x, y, w, h)
-		if selected then
-			rrectfill(x, y, w - 1, h - 1, 1, 3)
-		else
-			rrectfill(x, y, w - 1, h - 1, 1, 4)
-		end
-		print(text, x + w / 2 - (4 * #text / 2), y + h / 2 - 3, 1)
-	end
-
-	function GUI:make_grid(items, x, y, w, h, onChoose)
-		local window = Window:new(self)
-		local cols = 4
-		window.selected = 0
-		window.onX = function() self:close_window() end
-		window.onO = function() self:close_window() onChoose(window.selected + 1) end
-		window.onUp = function()
-			window.selected = window.selected - cols
-			if window.selected < 0 then
-				window.selected = ceil(#items / cols) * cols + window.selected
-			end
-			if window.selected >= #items then
-				window.selected -= cols
-			end
-		end
-		window.onDown = function()
-			window.selected = window.selected + cols
-			if window.selected >= #items then
-				window.selected = window.selected - ceil(#items / cols) * cols
-			end
-			if window.selected < 0 then
-				window.selected += cols
-			end
-		end
-		window.onLeft = function()
-			-- window.selected = (window.selected - 1) % #items
-			window.selected = (window.selected - 1) % cols + flr(window.selected / cols) * cols
-			if window.selected >= #items then
-				window.selected = #items - 1
-			end
-		end
-		window.onRight = function()
-			-- window.selected = (window.selected + 1) % #items
-			window.selected = (window.selected + 1) % cols + flr(window.selected / cols) * cols
-			if window.selected >= #items then
-				window.selected = flr(#items / cols) * cols
-			end
-		end
-		window.draw = function() self:draw_grid(items, window.selected + 1, x, y, w, h, cols) end
-		add(self.windows, window)
-		return window
-	end
-
-	function GUI:make_textbox(message)
-		local window = Window:new(self)
-		window.onX = function() self:close_window() end
-		window.onO = function() self:close_window() end
-		window.draw = function() self:draw_bottom_text(message) end
-		add(self.windows, window)
-		return window
-	end
+function Enemy:check_path_to_player()
+    local myy = round(self.y / 8)
+    for x = round(self.x / 8), round(player.x / 8), (self.x < player.x and 1 or -1) do
+        local next_tile = mget(x, myy)
+        -- printh(x .. "," .. myy .. ":" .. next_tile)
+        if next_tile != LADDER_TILE and next_tile != SHIMMY_TILE then
+            local next_ground = mget(x, myy + 1)
+            if next_ground == 0 or next_ground == GOLD_TILE then
+                return false
+            end
+        end
+    end
+    return true
 end
-package._c["gui/lr_widgets"] = function()
-	function GUI:make_main_menu(choose)
-		local levels = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17" }
-		local grid = self:make_grid(levels, 2, 20, 124, 106, choose)
-		grid.onX = nil
-		local old_draw = grid.draw
-		local title = "lode runner"
-		local style = "\f7\^w\^t\^o!ff"
-		grid.draw = function()
-			cls(1)
-			old_draw()
-			print(style .. title, self.xOffset + 64 - (#title / 2 * 8), 4, 0)
-		end
-	end
 
-	function GUI:make_yesno(startYes, onYes, onNo)
-		local window = Window:new(self)
-		window.yes = startYes
-		window.onX = function() self:close_window() onNo() end
-		window.onO = function() self:close_window() if window.yes then onYes() else onNo() end end
-		window.onUp = function() window.yes = not window.yes end
-		window.onDown = function() window.yes = not window.yes end
-		window.draw = function() self:draw_list({ "yes", "no" }, not window.yes and 1 or 0, 107, 92, 20, 16) end
-		add(self.windows, window)
-		return window
-	end
-
-	function GUI:draw_bottom_text(message)
-		local text_height = 7
-		self:draw_textbox(message, 1, 109, 126, text_height * 2 + 4)
-	end
+-- This will actually be the ai, rather than input
+function Enemy:get_input()
+    self.dx = 0
+    self.dy = 0
+    -- Rule 1: get player if on same level
+    if abs(player.y - self.y) <= 4 and self:check_path_to_player() then
+        if self.x - player.x > 0 and self.left_allowed then
+            self.dx = -SPEED
+        elseif self.x - player.x < 0 and self.right_allowed then
+            self.dx = SPEED
+        end
+    end
+    if self.dx > 0 then
+        self.facing_left = false
+    elseif self.dx < 0 then
+        self.facing_left = true
+    end
 end
-package._c["effects"] = function()
-	effects = {
-		effects = {}
-	}
-
-	Effect = {
-		draw = function() end,
-		duration = 0
-	}
-	Effect.__index = Effect
-	function Effect:new()
-		local instance = setmetatable({}, self)
-		return instance
-	end
-
-	function effects:round_wipe(speed, callback)
-		local e = Effect:new()
-		e.duration = 91
-		e.draw = function(xOffset, yOffset)
-			poke(0x5f34, 0x2)
-			e.duration += speed > 0 and -speed or speed
-			circfill(xOffset + 64, yOffset + 64, speed > 0 and (91 - e.duration) or e.duration, 0 | 0x1800)
-			if e.duration <= 0 then
-				callback()
-			end
-		end
-		add(effects.effects, e)
-		return e
-	end
-
-	function effects:horizontal_wipe(speed, callback)
-		local e = Effect:new()
-		e.duration = 64
-		e.draw = function(self, xOffset, yOffset)
-			poke(0x5f34, 0x2)
-			e.duration += speed > 0 and -speed or speed
-			local position = speed > 0 and (64 - e.duration) or e.duration
-			rectfill(xOffset + 0, yOffset + 64 - position, xOffset + 128, yOffset + 64 + position, 0 | 0x1800)
-			if e.duration <= 0 then
-				callback()
-			end
-		end
-		add(effects.effects, e)
-		return e
-	end
-
-	function effects:draw(xOffset, yOffset)
-		for e in all(self.effects) do
-			e:draw(xOffset, yOffset)
-		end
-		filter_inplace(self.effects, function(e) return e.duration > 0 end)
-	end
 end
-package._c["noise"] = function()
-	-- Shiplex Noise
-	-- Noesis
+package._c["level"]=function()
+-- tiles/sprites
+--[[$const]] GOLD_TILE = 24
+--[[$const]] PLAYER_START_TILE = 25
+--[[$const]] ENEMY_SPAWN_TILE = 26
+--[[$const]] LADDER_TILE = 20
+--[[$const]] SHIMMY_TILE = 22
+--[[$const]] BRICK_TILE = 33
 
-	--sn noise
-	srand(0)
-	local s_noise_p = {}
-	for i = 1, 512 do
-		s_noise_p[i] = flr(rnd(256))
-	end
-	local s_noise_g = { { 1, 1 }, { 1, -1 }, { -1, 1 }, { -1, 0 }, { -1, -1 }, { 1, -1 }, { 1, -1 }, { 1, 0 } }
-	function s_noise_cb(x, y, z)
-		local t = .5 - x * x - y * y
-		if (t < 0) return 0
-		return t ^ 4 * (s_noise_g[z + 1][1] * x + s_noise_g[z + 1][2] * y)
-	end
-	function simplex(x, y)
-		local g = .2113
-		local s = (x + y) * .366
-		local i, j = flr(x + s), flr(y + s)
-		local t = (i + j) * g
-		local x0, y0 = x - (i - t), y - (j - t)
-		local i1 = 0
-		j1 = 1
-		if (x0 > y0) i1 = 1
-		j1 = 0
-		local x1 = x0 - i1 + g
-		local y1 = y0 - j1 + g
-		local x2 = x0 - 1 + 2 * g
-		local y2 = y0 - 1 + 2 * g
-		local u = i & 255
-		local v = j & 255
-		return 70 * (s_noise_cb(x0, y0, s_noise_p[u + s_noise_p[v + 1]] % 8) + s_noise_cb(x1, y1, s_noise_p[u + i1 + s_noise_p[v + j1 + 1]] % 8) + s_noise_cb(x2, y2, s_noise_p[u + 1 + s_noise_p[v + 2]] % 8))
-	end
+Level = {
+    mapX = 0,
+    mapY = 0,
+    bricks = {},
+    gold = 0
+}
+Level.__index = Level
+
+function Level:new(x, y)
+    local instance = setmetatable({}, self)
+    self.mapX = x
+    self.mapY = y
+    return instance
 end
-package._c["background-shimmer"] = function()
-	function draw_shimmer(time, offsetX, offsetY)
-		local timeScale = 200
-		time += timeScale
-		local range = 3
-		local threshold = abs(((time % timeScale) / timeScale) - 0.5) * 0.5 + 0.3
-		for y = 0, 15 do
-			for x = 0, 15 do
-				local tile = mget(112 + x, 048 + y)
-				if simplex((x * 400 * flr(time / 200)), y * 4) > threshold then
-					tile += 4
-				end
-				spr(tile, x * 8 + offsetX, y * 8 + offsetY)
-			end
-		end
-	end
+
+function Level:index_bricks()
+    for y = self.mapY, self.mapY + 15 do
+        for x = self.mapX, self.mapX + 15 do
+            local maptile = mget(x, y)
+            if maptile == BRICK_TILE then
+                self.bricks[#self.bricks + 1] = { x, y, -1 }
+            end
+        end
+    end
+end
+
+function Level:place_player(player)
+    for y = self.mapY, self.mapY + 15 do
+        for x = self.mapX, self.mapX + 15 do
+            local maptile = mget(x, y)
+            if maptile == PLAYER_START_TILE then
+                mset(x, y, 0)
+                player:move_to(x * 8, y * 8)
+                player:reset()
+                return
+            end
+        end
+    end
+end
+
+function Level:place_enemies(enemies)
+    local index = 0
+    for y = self.mapY, self.mapY + 15 do
+        for x = self.mapX, self.mapX + 15 do
+            local maptile = mget(x, y)
+            if maptile == ENEMY_SPAWN_TILE then
+                mset(x, y, 0)
+                local enemy = Enemy:new(index)
+                enemy:move_to(x * 8, y * 8)
+                enemies[#enemies + 1] = enemy
+                index += 1
+            end
+        end
+    end
+end
+
+function Level:show_secret_ladders()
+    for y = self.mapY, self.mapY + 15 do
+        for x = self.mapX, self.mapX + 15 do
+            local maptile = mget(x, y)
+            if maptile == LADDER_TILE + 1 then
+                mset(x, y, LADDER_TILE)
+            end
+        end
+    end
+end
+
+function Level:count_remaining_gold()
+    for y = self.mapY, self.mapY + 15 do
+        for x = self.mapX, self.mapX + 15 do
+            if mget(x, y) == GOLD_TILE then
+                self.gold += 1
+            end
+        end
+    end
+end
+
+function Level:zap_block(pos)
+    local maptile = mget(unpack(pos))
+    if maptile == BRICK_TILE then
+        for b in all(self.bricks) do
+            if b[1] == pos[1] and b[2] == pos[2] then
+                b[3] = 0
+                return
+            end
+        end
+    end
+end
+
+--- Removes gold from the level
+--- @return whether or not the player has taken all gold in the level
+function Level:get_gold(x, y)
+    mset(x, y, 0)
+    self.gold -= 1
+    if self.gold <= 0 then
+        return true
+    else
+        return false
+    end
+end
+
+function Level:init()
+    self:index_bricks()
+    self:count_remaining_gold()
+end
+
+function Level:update()
+    -- update zapped bricks
+    for b in all(self.bricks) do
+        if b[3] != -1 then
+            -- Zapping
+            if b[3] <= 5 then
+                mset(b[1], b[2], BRICK_TILE + b[3])
+            elseif b[3] >= BRICK_END then
+                mset(b[1], b[2], BRICK_TILE + 5 - (b[3] - BRICK_END) + 1)
+            end
+            -- Unzapping
+            if b[3] > BRICK_END + 5 then
+                b[3] = -1
+                return
+            end
+            b[3] += 1 -- tick up
+        end
+    end
+end
+
+function Level:draw()
+    map(self.mapX, self.mapY, self.mapX * 8, self.mapY * 8, 16, 16, 0x8F)
+end
+end
+package._c["gui/window_manager"]=function()
+Window = {}
+Window.__index = Window
+
+function Window:new(owner)
+    local instance = setmetatable({ owner = owner }, self)
+    return instance
+end
+
+GUI = {
+    windows = {},
+    xOffset = 0,
+    yOffset = 0
+}
+GUI.__index = GUI
+
+function GUI:new(x, y)
+    local instance = setmetatable(
+        {
+            windows = {},
+            xOffset = x,
+            yOffset = y
+        }, self
+    )
+    return instance
+end
+
+function GUI:close_window()
+    deli(self.windows)
+end
+
+-- returns true if input shouldn't continue to bubble
+function GUI:handle_input()
+    if #self.windows > 0 then
+        local top = self.windows[#self.windows]
+        if btnp(4) then
+            if top.onO != nil then
+                top.onO()
+            end
+        elseif btnp(5) then
+            if top.onX != nil then
+                top.onX()
+            end
+        elseif btnp(2) then
+            if top.onUp != nil then
+                top.onUp()
+            end
+        elseif btnp(3) then
+            if top.onDown != nil then
+                top.onDown()
+            end
+        elseif btnp(1) then
+            if top.onRight != nil then
+                top.onRight()
+            end
+        elseif btnp(0) then
+            if top.onLeft != nil then
+                top.onLeft()
+            end
+        end
+        return true
+    else
+        return false
+    end
+end
+
+function GUI:draw()
+    for w in all(self.windows) do
+        if w.draw != nil then
+            w.draw()
+        end
+    end
+end
+end
+package._c["gui/renderer"]=function()
+function GUI:draw_window(x, y, w, h)
+    local cornerthing = 1
+    local outline_color = 0
+    local fill_color = 1
+    rrectfill(self.xOffset + x, self.yOffset + y, w, h, 1, fill_color)
+    rrect(self.xOffset + x, self.yOffset + y, w, h, 1, outline_color)
+    circfill(self.xOffset + x, self.yOffset + y, cornerthing, outline_color)
+    circfill(self.xOffset + x + w - 1, self.yOffset + y, cornerthing, outline_color)
+    circfill(self.xOffset + x, self.yOffset + y + h - 1, cornerthing, outline_color)
+    circfill(self.xOffset + x + w - 1, self.yOffset + y + h - 1, cornerthing, outline_color)
+end
+
+function GUI:draw_textbox(message, x, y, w, h)
+    local padding = 3
+    self:draw_window(x, y, w, h)
+    print(message, self.xOffset + x + padding, self.yOffset + y + padding)
+end
+
+function GUI:draw_list(items, selection, x, y, w, h)
+    self:draw_window(x, y, w, h)
+    local index = 0
+    for i in all(items) do
+        print(i, self.xOffset + x + 2 + 4, self.yOffset + y + 7 * index + 2)
+        index += 1
+    end
+    circ(self.xOffset + x + 3, self.yOffset + y + 4 + 7 * selection, 1)
+end
+
+function GUI:draw_grid(items, selected, x, y, w, h, cols)
+    self:draw_window(x, y, w, h)
+    local rows = ceil(#items / cols)
+    for row = 1, rows do
+        for column = 1, cols do
+            local index = (row - 1) * cols + column
+            if index <= #items then
+                local itemX = self.xOffset + x + (column - 1) * (w - 2) / cols + 2
+                local itemY = self.yOffset + y + (row - 1) * (h - 2) / rows + 2
+                self:draw_grid_item(items[index], index == selected, itemX, itemY, (w - 2) / cols - 1, (h - 2) / rows - 1)
+            end
+        end
+    end
+end
+
+function GUI:draw_grid_item(text, selected, x, y, w, h)
+    if selected then
+        rrectfill(x, y, w - 1, h - 1, 1, 3)
+    else
+        rrectfill(x, y, w - 1, h - 1, 1, 4)
+    end
+    print(text, x + w / 2 - (4 * #text / 2), y + h / 2 - 3, 1)
+end
+
+function GUI:make_grid(items, x, y, w, h, onChoose)
+    local window = Window:new(self)
+    local cols = 4
+    window.selected = 0
+    window.onX = function() self:close_window() end
+    window.onO = function() self:close_window() onChoose(window.selected + 1) end
+    window.onUp = function()
+        window.selected = window.selected - cols
+        if window.selected < 0 then
+            window.selected = ceil(#items / cols) * cols + window.selected
+        end
+        if window.selected >= #items then
+            window.selected -= cols
+        end
+    end
+    window.onDown = function()
+        window.selected = window.selected + cols
+        if window.selected >= #items then
+            window.selected = window.selected - ceil(#items / cols) * cols
+        end
+        if window.selected < 0 then
+            window.selected += cols
+        end
+    end
+    window.onLeft = function()
+        -- window.selected = (window.selected - 1) % #items
+        window.selected = (window.selected - 1) % cols + flr(window.selected / cols) * cols
+        if window.selected >= #items then
+            window.selected = #items - 1
+        end
+    end
+    window.onRight = function()
+        -- window.selected = (window.selected + 1) % #items
+        window.selected = (window.selected + 1) % cols + flr(window.selected / cols) * cols
+        if window.selected >= #items then
+            window.selected = flr(#items / cols) * cols
+        end
+    end
+    window.draw = function() self:draw_grid(items, window.selected + 1, x, y, w, h, cols) end
+    add(self.windows, window)
+    return window
+end
+
+function GUI:make_textbox(message)
+    local window = Window:new(self)
+    window.onX = function() self:close_window() end
+    window.onO = function() self:close_window() end
+    window.draw = function() self:draw_bottom_text(message) end
+    add(self.windows, window)
+    return window
+end
+end
+package._c["gui/lr_widgets"]=function()
+function GUI:make_main_menu(choose)
+    local levels = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17" }
+    local grid = self:make_grid(levels, 2, 20, 124, 106, choose)
+    grid.onX = nil
+    local old_draw = grid.draw
+    local title = "lode runner"
+    local style = "\f7\^w\^t\^o!ff"
+    grid.draw = function()
+        cls(1)
+        old_draw()
+        print(style .. title, self.xOffset + 64 - (#title / 2 * 8), 4, 0)
+    end
+end
+
+function GUI:make_yesno(startYes, onYes, onNo)
+    local window = Window:new(self)
+    window.yes = startYes
+    window.onX = function() self:close_window() onNo() end
+    window.onO = function() self:close_window() if window.yes then onYes() else onNo() end end
+    window.onUp = function() window.yes = not window.yes end
+    window.onDown = function() window.yes = not window.yes end
+    window.draw = function() self:draw_list({ "yes", "no" }, not window.yes and 1 or 0, 107, 92, 20, 16) end
+    add(self.windows, window)
+    return window
+end
+
+function GUI:draw_bottom_text(message)
+    local text_height = 7
+    self:draw_textbox(message, 1, 109, 126, text_height * 2 + 4)
+end
+end
+package._c["effects"]=function()
+effects = {
+    effects = {}
+}
+
+Effect = {
+    draw = function() end,
+    duration = 0
+}
+Effect.__index = Effect
+function Effect:new()
+    local instance = setmetatable({}, self)
+    return instance
+end
+
+function effects:round_wipe(speed, callback)
+    local e = Effect:new()
+    e.duration = 91
+    e.draw = function(xOffset, yOffset)
+        poke(0x5f34, 0x2)
+        e.duration += speed > 0 and -speed or speed
+        circfill(xOffset + 64, yOffset + 64, speed > 0 and (91 - e.duration) or e.duration, 0 | 0x1800)
+        if e.duration <= 0 then
+            callback()
+        end
+    end
+    add(effects.effects, e)
+    return e
+end
+
+function effects:horizontal_wipe(speed, callback)
+    local e = Effect:new()
+    e.duration = 64
+    e.draw = function(self, xOffset, yOffset)
+        poke(0x5f34, 0x2)
+        e.duration += speed > 0 and -speed or speed
+        local position = speed > 0 and (64 - e.duration) or e.duration
+        rectfill(xOffset + 0, yOffset + 64 - position, xOffset + 128, yOffset + 64 + position, 0 | 0x1800)
+        if e.duration <= 0 then
+            callback()
+        end
+    end
+    add(effects.effects, e)
+    return e
+end
+
+function effects:draw(xOffset, yOffset)
+    for e in all(self.effects) do
+        e:draw(xOffset, yOffset)
+    end
+    filter_inplace(self.effects, function(e) return e.duration > 0 end)
+end
+end
+package._c["noise"]=function()
+-- Shiplex Noise
+-- Noesis
+
+--sn noise
+srand(0)
+local s_noise_p = {}
+for i = 1, 512 do
+    s_noise_p[i] = flr(rnd(256))
+end
+local s_noise_g = { { 1, 1 }, { 1, -1 }, { -1, 1 }, { -1, 0 }, { -1, -1 }, { 1, -1 }, { 1, -1 }, { 1, 0 } }
+function s_noise_cb(x, y, z)
+    local t = .5 - x * x - y * y
+    if (t < 0) return 0
+    return t ^ 4 * (s_noise_g[z + 1][1] * x + s_noise_g[z + 1][2] * y)
+end
+function simplex(x, y)
+    local g = .2113
+    local s = (x + y) * .366
+    local i, j = flr(x + s), flr(y + s)
+    local t = (i + j) * g
+    local x0, y0 = x - (i - t), y - (j - t)
+    local i1 = 0
+    j1 = 1
+    if (x0 > y0) i1 = 1
+    j1 = 0
+    local x1 = x0 - i1 + g
+    local y1 = y0 - j1 + g
+    local x2 = x0 - 1 + 2 * g
+    local y2 = y0 - 1 + 2 * g
+    local u = i & 255
+    local v = j & 255
+    return 70 * (s_noise_cb(x0, y0, s_noise_p[u + s_noise_p[v + 1]] % 8) + s_noise_cb(x1, y1, s_noise_p[u + i1 + s_noise_p[v + j1 + 1]] % 8) + s_noise_cb(x2, y2, s_noise_p[u + 1 + s_noise_p[v + 2]] % 8))
+end
+end
+package._c["background-shimmer"]=function()
+function draw_shimmer(time, offsetX, offsetY)
+    local timeScale = 200
+    time += timeScale
+    local range = 3
+    local threshold = abs(((time % timeScale) / timeScale) - 0.5) * 0.5 + 0.3
+    for y = 0, 15 do
+        for x = 0, 15 do
+            local tile = mget(112 + x, 048 + y)
+            if simplex((x * 400 * flr(time / 200)), y * 4) > threshold then
+                tile += 4
+            end
+            spr(tile, x * 8 + offsetX, y * 8 + offsetY)
+        end
+    end
+end
 end
 function require(p)
-	local l = package.loaded
-	if (l[p] == nil) l[p] = package._c[p]()
-	if (l[p] == nil) l[p] = true
-	return l[p]
+local l=package.loaded
+if (l[p]==nil) l[p]=package._c[p]()
+if (l[p]==nil) l[p]=true
+return l[p]
 end
 -- settings
 --[[$const]] SPEED = 1
@@ -1147,7 +1138,6 @@ function _draw()
 	end
 	gui:draw()
 end
-
 __gfx__
 000000001f5555ff1f5555ff1f5555ff1f5555ff1f5555ff1f5555f11f5555f1ffffffffffffffff1f5555f1ff5555ffffff5fff000000000000000000000000
 000000001555555f1555555f1555555f1555555f1555555ff155551ff155551ff0011f5f00ff115ff504405fff04405fff0f40ff000000000000000000000000

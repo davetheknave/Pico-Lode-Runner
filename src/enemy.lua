@@ -37,4 +37,9 @@ function Enemy:get_input()
             self.dx = SPEED
         end
     end
+    if self.dx > 0 then
+        self.facing_left = false
+    elseif self.dx < 0 then
+        self.facing_left = true
+    end
 end
