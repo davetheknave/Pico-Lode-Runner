@@ -160,7 +160,7 @@ function Character:check_mobility()
 	end
 
 	self.left_allowed = not fget(mget(left_pos:unpack()), COLLISION_FLAG) and not (left_pos.x < level.mapX)
-	self.right_allowed = not fget(mget(right_pos:unpack()), COLLISION_FLAG) and not (right_pos.x > level.mapX + 16)
+	self.right_allowed = not fget(mget(right_pos:unpack()), COLLISION_FLAG) and not (right_pos.x > level.mapX + 15)
 
 	self.shoot_left_allowed = mget(self:get_floor_left():unpack()) == BRICK_TILE and not fget(left_tile, BLOCK_ZAP_FLAG)
 	self.shoot_right_allowed = mget(self:get_floor_right():unpack()) == BRICK_TILE and not fget(right_tile, BLOCK_ZAP_FLAG)
