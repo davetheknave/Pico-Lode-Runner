@@ -15,6 +15,7 @@
 --[[$const]] DIE_SOUND = 61
 --[[$const]] ENEMY_DIE_SOUND = 60
 
+#include debug/gizmos.lua
 #include vector.lua
 #include utilities.lua
 #include aabb.lua
@@ -182,4 +183,5 @@ function _draw()
 		effects:draw(level.mapX * 8, level.mapY * 8)
 	end
 	gui:draw()
+	debug.draw()
 end
