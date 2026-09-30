@@ -2,6 +2,64 @@ pico-8 cartridge // http://www.pico-8.com
 version 43
 __lua__
 package={loaded={},_c={}}
+package._c["debug/gizmos"]=function()
+--[[$const]] DEBUG_DEFAULT_COLOR = 2
+
+debug = {
+    color = DEBUG_DEFAULT_COLOR,
+    points = {},
+    lines = {},
+    arrows = {},
+    rects = {},
+    text = {}
+}
+
+-- types of things to draw: points/circles, arrows, lines, rect, text
+
+function debug.point(x, y)
+    add(debug.points, { x, y, debug.color })
+end
+function debug.sprite_point(x, y)
+    debug.point(x * 8 + 3, y * 8 + 3)
+end
+
+function debug.line(x, y, x2, y2)
+    add(debug.lines, { x, y, x2, y2, debug.color })
+end
+function debug.arrow(x, y, x2, y2)
+    add(debug.arrows, { x, y, x2, y2, debug.color })
+end
+function debug.rect(x, y, x2, y2)
+    add(debug.rects, { x, y, x2, y2, debug.color })
+end
+function debug.print(text, x, y)
+    add(debug.text, { text, x, y, debug.color })
+end
+
+function debug.draw()
+    for p in all(debug.points) do
+        circ(p[1], p[2], 1, p[3])
+    end
+    for l in all(debug.lines) do
+        line(l[1], l[2], l[3], l[4], l[5])
+    end
+    for a in all(debug.arrows) do
+        line(a[1], a[2], a[3], a[4], a[5])
+        circ(a[3], a[4], 2, a[5])
+    end
+    for r in all(debug.rects) do
+        rect(r[1], r[2], r[3], r[4], r[5])
+    end
+    for t in all(debug.text) do
+        print(t[1], t[2], t[3], t[4])
+    end
+    debug.points = {}
+    debug.lines = {}
+    debug.arrows = {}
+    debug.rects = {}
+    debug.text = {}
+end
+end
 package._c["vector"]=function()
 Vector = {
     x = 0, y = 0
@@ -42,7 +100,7 @@ function distance2(pos1, pos2)
     return abs(pos1.x - pos2.x) ^ 2 + abs(pos1.y - pos2.y) ^ 2
 end
 
-function Vector:__add(pos1, pos2)
+function Vector.__add(pos1, pos2)
     return Vector:new(pos1.x + pos2.x or pos2[1], pos1.y + pos2.y or pos2[2])
 end
 
@@ -252,16 +310,15 @@ function Character:check_mobility()
 		return
 	end
 	-- Get surroundings
-	local self_pos = self:get_tile()
-	local self_tile = mget(self_pos:unpack())
+	local self_tile = mget(self.map_pos:unpack())
 	local below_pos = self:get_floor()
 	local below_tile = mget(below_pos:unpack())
 	local above_pos = self:get_ceiling()
 	local above_tile = mget(above_pos:unpack())
 	local left_pos = self:get_left()
-	local left_tile = mget(self_pos.x - 1, self_pos.y)
+	local left_tile = mget(self.map_pos.x - 1, self.map_pos.y)
 	local right_pos = self:get_right()
-	local right_tile = mget(self_pos.x + 1, self_pos.y)
+	local right_tile = mget(self.map_pos.x + 1, self.map_pos.y)
 
 	local touching_ladder = self_tile == LADDER_TILE or below_tile == LADDER_TILE
 	local grounded = self:check_grounded()
@@ -295,7 +352,7 @@ function Character:check_mobility()
 	end
 
 	self.left_allowed = not fget(mget(left_pos:unpack()), COLLISION_FLAG) and not (left_pos.x < level.mapX)
-	self.right_allowed = not fget(mget(right_pos:unpack()), COLLISION_FLAG) and not (right_pos.x > level.mapX + 16)
+	self.right_allowed = not fget(mget(right_pos:unpack()), COLLISION_FLAG) and not (right_pos.x > level.mapX + 15)
 
 	self.shoot_left_allowed = mget(self:get_floor_left():unpack()) == BRICK_TILE and not fget(left_tile, BLOCK_ZAP_FLAG)
 	self.shoot_right_allowed = mget(self:get_floor_right():unpack()) == BRICK_TILE and not fget(right_tile, BLOCK_ZAP_FLAG)
@@ -378,6 +435,7 @@ function Character:change_state(new_state)
 end
 
 function Character:update()
+	self.map_pos = self:get_tile()
 	self:check_mobility()
 	self:get_input()
 	self:update_movement()
@@ -447,20 +505,18 @@ function Player:get_input()
 end
 
 function Player:collide(other)
-	if manhattan_distance(self:get_tile(), other:get_tile()) <= 1 then
+	if manhattan_distance(self.map_pos, other.map_pos) <= 1 then
 		lose()
 	end
 end
 
 function Player:update()
-	self:check_mobility()
-	self:get_input()
-	self:update_movement()
+	Character.update(self)
 	-- game logic
-	local next_pos = self:get_tile()
+	local next_pos = self.map_pos
 	local next_tile = mget(next_pos:unpack())
 	if next_tile == GOLD_TILE and manhattan_distance(self.position:scale(1 / 8), next_pos) <= 0.25 then
-		self:get_gold(self:get_tile())
+		self:get_gold(self.map_pos)
 	end
 end
 
@@ -507,15 +563,61 @@ function Enemy:check_path_to_player()
     local myy = round(self.position.y / 8)
     for x = round(self.position.x / 8), round(player.position.x / 8), (self.position.x < player.position.x and 1 or -1) do
         local next_tile = mget(x, myy)
-        -- printh(x .. "," .. myy .. ":" .. next_tile)
         if next_tile != LADDER_TILE and next_tile != SHIMMY_TILE then
             local next_ground = mget(x, myy + 1)
-            if next_ground == 0 or next_ground == GOLD_TILE then
+            if (next_ground == 0 and (myy < (level.mapY + 15))) or next_ground == GOLD_TILE then
                 return false
             end
         end
     end
     return true
+end
+
+function Enemy:get_disembark_points(vector)
+    if mget(vector:unpack()) == LADDER_TILE then
+        return self:search_ladder(vector)
+    else
+        return {}
+    end
+end
+
+function Enemy:search_ladder(vector)
+    local function add_disembark_points(point_collection, point)
+        for xo = -1, 1 do
+            local disembark_point = point + Vector:new(xo, 0)
+            local checktile = not fget(mget(disembark_point:unpack()), COLLISION_FLAG)
+            local ground_is_bottom = (disembark_point.y + 1) > (level.mapY + 16)
+            local ground_is_solid = fget(mget(disembark_point.x, disembark_point.y + 1), COLLISION_FLAG)
+            local is_valid_disembark_point = checktile and (ground_is_bottom or ground_is_solid)
+            if is_valid_disembark_point then
+                add(point_collection, disembark_point)
+                debug.color = 15
+                debug.sprite_point(disembark_point:unpack())
+                debug.color = DEBUG_DEFAULT_COLOR
+            else
+                debug.color = 14
+                debug.sprite_point(disembark_point:unpack())
+                debug.color = DEBUG_DEFAULT_COLOR
+            end
+        end
+    end
+    local output = {}
+    local current_vector = vector:copy()
+    local current_tile = mget(vector:unpack())
+    -- Check below ladder
+    while current_tile == LADDER_TILE and current_vector.y <= (level.mapY + 16) do
+        add_disembark_points(output, current_vector)
+        current_vector.y += 1
+        current_tile = mget(current_vector:unpack())
+    end
+    -- Check above ladder
+    current_vector.y = vector.y
+    while current_tile == LADDER_TILE and current_vector.y >= level.mapY do
+        add_disembark_points(output, current_vector)
+        current_vector.y -= 1
+        current_tile = mget(current_vector:unpack())
+    end
+    return output
 end
 
 -- This will actually be the ai, rather than input
@@ -524,12 +626,110 @@ function Enemy:get_input()
     self.dy = 0
     -- Rule 1: get player if on same level
     if abs(player.position.y - self.position.y) <= 4 and self:check_path_to_player() then
+        debug.print("C", self.position.x, self.position.y)
         if self.position.x - player.position.x > 0 and self.left_allowed then
             self.dx = -SPEED
         elseif self.position.x - player.position.x < 0 and self.right_allowed then
             self.dx = SPEED
         end
+    else
+        -- Rule 2: Get to the player's y level
+        local best_route = nil
+        local best_score = nil
+        -- A destination needs a vector and a move direction
+        -- Check down
+        if self.down_allowed then
+            for y = self.map_pos.y, 15 do
+                local tile = mget(self.map_pos.x, y)
+                if not fget(tile, COLLISION_FLAG) or tile == ONE_WAY_BRICK then
+                    debug.sprite_point(self.map_pos.x, y)
+                    for p in all(self:get_disembark_points(Vector:new(self.map_pos.x, y))) do
+                        local score = player.map_pos.y - p.y
+                        if (score < 0) score *= -100
+                        if not best_route or score < best_score then
+                            best_route = "down"
+                            best_score = score
+                        end
+                    end
+                else
+                    break
+                end
+            end
+        end
+        -- Check up
+        if self.up_allowed then
+            for y = 0, self.map_pos.y do
+                debug.sprite_point(self.map_pos.x, y, 3)
+                local tile = mget(self.map_pos.x, y)
+                if not fget(tile, COLLISION_FLAG) or tile == ONE_WAY_BRICK then
+                    for p in all(self:get_disembark_points(Vector:new(self.map_pos.x, y))) do
+                        local score = player.map_pos.y - p.y
+                        if (score < 0) score *= -100
+                        if not best_route or score < best_score then
+                            best_route = "up"
+                            best_score = score
+                        end
+                    end
+                else
+                    break
+                end
+            end
+        end
+        -- Check left
+        if self.left_allowed then
+            for x = 0, self.map_pos.x do
+                debug.sprite_point(x, self.map_pos.y, 3)
+                local tile = mget(x, self.map_pos.y)
+                if not fget(tile, COLLISION_FLAG) or tile == ONE_WAY_BRICK then
+                    for p in all(self:get_disembark_points(Vector:new(x, self.map_pos.y))) do
+                        local score = player.map_pos.y - p.y
+                        if (score < 0) score *= -100
+                        if not best_route or score < best_score then
+                            best_route = "left"
+                            best_score = score
+                        end
+                    end
+                else
+                    break
+                end
+            end
+        end
+        -- Check right
+        if self.right_allowed then
+            for x = self.map_pos.x, 15 do
+                debug.sprite_point(x, self.map_pos.y, 3)
+                local tile = mget(x, self.map_pos.y)
+                if not fget(tile, COLLISION_FLAG) or tile == ONE_WAY_BRICK then
+                    for p in all(self:get_disembark_points(Vector:new(x, self.map_pos.y))) do
+                        local score = player.map_pos.y - p.y
+                        if (score < 0) score *= -100
+                        if not best_route or score < best_score then
+                            best_route = "right"
+                            best_score = score
+                        end
+                    end
+                else
+                    break
+                end
+            end
+        end
+        -- Actually set movement
+        if best_route == "down" then
+            debug.print("D", self.position.x, self.position.y)
+            self.dy = SPEED
+        elseif best_route == "up" then
+            debug.print("U", self.position.x, self.position.y)
+            self.dy = -SPEED
+        elseif best_route == "left" then
+            debug.print("L", self.position.x, self.position.y)
+            self.dx = -SPEED
+        elseif best_route == "right" then
+            debug.print("R", self.position.x, self.position.y)
+            self.dx = SPEED
+        end
     end
+
+    -- Finalize
     if self.dx > 0 then
         self.facing_left = false
     elseif self.dx < 0 then
@@ -1017,6 +1217,7 @@ end
 --[[$const]] DIE_SOUND = 61
 --[[$const]] ENEMY_DIE_SOUND = 60
 
+require("debug/gizmos")
 require("vector")
 require("utilities")
 require("aabb")
@@ -1092,12 +1293,12 @@ function _init()
 	set_palette(0)
 	show_main_menu()
 	-- 142 is the O key
-	menuitem(1, "🅾️ digs right", swap_controls)
+	menuitem(1, "🅾️ digs left", swap_controls)
 end
 
 function swap_controls()
 	swapped_controls = not swapped_controls
-	menuitem(1, "🅾️ digs left", swap_controls)
+	menuitem(1, "🅾️ digs right", swap_controls)
 end
 
 function show_main_menu()
@@ -1184,6 +1385,7 @@ function _draw()
 		effects:draw(level.mapX * 8, level.mapY * 8)
 	end
 	gui:draw()
+	debug.draw()
 end
 __gfx__
 000000001f5555ff1f5555ff1f5555ff1f5555ff1f5555ff1f5555f11f5555f1ffffffffffffffff1f5555f1ff5555ffffff5fff000000000000000000000000
@@ -1323,7 +1525,7 @@ __map__
 15000000000000000000000000000000141616161616161616161616161616140000000000000000000000000000001500000018140000001515151515000000000000000000161616161616161621150000001a000000000000000000000015001a180015000000000000000000000000000000000000000000001a00150000
 150000000000000000000000000000001400000000001a000000000000000014000000000000000000000000000000150000181400000015000000000000000000180018190014000000000000002115212121212121140000001800001800151421212121000000180018000000000016161616161616161611211121112114
 1416161616161616161616161616160014000000000021182100000000000014001800180018001800000018001800150018140000000000150000000000000021212121212114000000180018002115180000212121140014111111111111111400000000001421212121210000000018001800180018000011000000000014
-141a0000000000000000000000001a001400000018211821182118000000001400140014001400140000001416142121001418000000001500180018001a001400181800000014000000000000002115212121212121212114140000000000001400000000001400000000000000000016161600161616000011142111211121
+14001a00000000000000000000001a001400000018211821182118000000001400140014001400140000001416142121001418000000001500180018001a001400181800000014000000000000002115212121212121212114140000000000001400000000001400000000000000000016161600161616000011142111211121
 2121140000000018000000002118212114000018211821182118211800000014001400140014001414001414001421180000140019001800212121212121140021212112212121211400000000002115000000000000000000140000000000002121211400001400000000001800180000180018001800180011140000000000
 18211400000021212100002118212118140000211821182118211821000000141400001400140014001400140014212121210014212121210000180000000014000018001800180014000000000021150018001800000018002114161616000000000014001814001a0000142121210000161616001616160011211121112114
 212114000000000000002121212121211400211821182118211821182100001400140014001400140014001400142118000014000018001a180021211800140021212112212121212121140000002115212121212121212121211400000000000000001421212121210000140000000018001800180018000011000000000014
