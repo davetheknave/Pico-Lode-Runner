@@ -167,7 +167,8 @@ end
 
 function Character:check_grounded()
 	local floor = self:get_floor()
-	return flr(floor.y) >= (level.mapY + 16) or fget(mget(floor:unpack()), COLLISION_FLAG)
+	local floor_tile = mget(floor:unpack())
+	return flr(floor.y) >= (level.mapY + 16) or (fget(floor_tile, COLLISION_FLAG) and not (floor_tile == ONE_WAY_BRICK))
 end
 
 function Character:update_movement()
