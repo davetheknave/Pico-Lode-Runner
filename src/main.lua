@@ -114,9 +114,7 @@ end
 
 function player:get_gold(pos)
 	sfx(GOLD_SOUND)
-	if level:get_gold(pos.x, pos.y) then
-		level:show_secret_ladders()
-	end
+	level:get_gold(pos.x, pos.y)
 end
 
 function check_collisions()

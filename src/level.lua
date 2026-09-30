@@ -102,6 +102,7 @@ function Level:get_gold(x, y)
     mset(x, y, 0)
     self.gold -= 1
     if self.gold <= 0 then
+        self:show_secret_ladders()
         return true
     else
         return false

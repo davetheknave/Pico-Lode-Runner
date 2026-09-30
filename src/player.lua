@@ -66,8 +66,9 @@ function Player:update()
 	self:get_input()
 	self:update_movement()
 	-- game logic
-	local next_tile = mget(self:get_tile():unpack())
-	if next_tile == GOLD_TILE then
+	local next_pos = self:get_tile()
+	local next_tile = mget(next_pos:unpack())
+	if next_tile == GOLD_TILE and manhattan_distance(self.position:scale(1 / 8), next_pos) <= 0.25 then
 		self:get_gold(self:get_tile())
 	end
 end

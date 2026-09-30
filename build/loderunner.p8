@@ -45,6 +45,10 @@ end
 function Vector:__add(pos1, pos2)
     return Vector:new(pos1.x + pos2.x or pos2[1], pos1.y + pos2.y or pos2[2])
 end
+
+function Vector:scale(scalar)
+    return Vector:new(self.x * scalar, self.y * scalar)
+end
 end
 package._c["utilities"]=function()
 function round(value)
@@ -436,8 +440,9 @@ function Player:update()
 	self:get_input()
 	self:update_movement()
 	-- game logic
-	local next_tile = mget(self:get_tile():unpack())
-	if next_tile == GOLD_TILE then
+	local next_pos = self:get_tile()
+	local next_tile = mget(next_pos:unpack())
+	if next_tile == GOLD_TILE and manhattan_distance(self.position:scale(1 / 8), next_pos) <= 0.25 then
 		self:get_gold(self:get_tile())
 	end
 end
@@ -620,6 +625,7 @@ function Level:get_gold(x, y)
     mset(x, y, 0)
     self.gold -= 1
     if self.gold <= 0 then
+        self:show_secret_ladders()
         return true
     else
         return false
@@ -1093,9 +1099,7 @@ end
 
 function player:get_gold(pos)
 	sfx(GOLD_SOUND)
-	if level:get_gold(pos.x, pos.y) then
-		level:show_secret_ladders()
-	end
+	level:get_gold(pos.x, pos.y)
 end
 
 function check_collisions()

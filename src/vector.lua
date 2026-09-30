@@ -40,3 +40,7 @@ end
 function Vector:__add(pos1, pos2)
     return Vector:new(pos1.x + pos2.x or pos2[1], pos1.y + pos2.y or pos2[2])
 end
+
+function Vector:scale(scalar)
+    return Vector:new(self.x * scalar, self.y * scalar)
+end
