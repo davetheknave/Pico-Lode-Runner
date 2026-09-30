@@ -31,7 +31,7 @@ function Player:get_input()
 			end
 		end
 
-		if self.shoot_left_allowed and btn(4) then
+		if self.shoot_left_allowed and btn(swapped_controls and 5 or 4) then
 			-- O
 			self:shoot(true)
 			self.facing_left = true
@@ -40,7 +40,7 @@ function Player:get_input()
 			self.dx = 0
 			self.dy = 0
 		end
-		if self.shoot_right_allowed and btn(5) then
+		if self.shoot_right_allowed and btn(swapped_controls and 4 or 5) then
 			-- X
 			self:shoot(false)
 			self.facing_left = false

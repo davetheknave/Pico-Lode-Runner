@@ -252,15 +252,18 @@ function Character:check_mobility()
 		return
 	end
 	-- Get surroundings
+	local self_pos = self:get_tile()
+	local self_tile = mget(self_pos:unpack())
 	local below_pos = self:get_floor()
 	local below_tile = mget(below_pos:unpack())
-	local map_pos = self:get_tile()
-	local map_tile = mget(map_pos:unpack())
-	local ceiling = self:get_ceiling()
-	local left_tile = mget(map_pos.x - 1, map_pos.y)
-	local right_tile = mget(map_pos.x + 1, map_pos.y)
+	local above_pos = self:get_ceiling()
+	local above_tile = mget(above_pos:unpack())
+	local left_pos = self:get_left()
+	local left_tile = mget(self_pos.x - 1, self_pos.y)
+	local right_pos = self:get_right()
+	local right_tile = mget(self_pos.x + 1, self_pos.y)
 
-	local touching_ladder = map_tile == LADDER_TILE or below_tile == LADDER_TILE
+	local touching_ladder = self_tile == LADDER_TILE or below_tile == LADDER_TILE
 	local grounded = self:check_grounded()
 
 	-- Check movement
@@ -277,24 +280,22 @@ function Character:check_mobility()
 		if not grounded then
 			self.state = STATE_CLIMBING
 		end
-		if not ((self.position.y % 8 == 0) and not (map_tile == LADDER_TILE)) then
+		if not ((self.position.y % 8 == 0) and not (self_tile == LADDER_TILE)) then
 			self.up_allowed = true
 		else
 			self.state = STATE_STANDING
 		end
 	end
-	if fget(mget(ceiling:unpack()), COLLISION_FLAG) or ceiling.y < level.mapY then
+	if fget(above_tile, COLLISION_FLAG) or above_pos.y < level.mapY then
 		self.up_allowed = false
 	end
-	if map_tile == SHIMMY_TILE and self.position.y % 8 == 0 then
+	if self_tile == SHIMMY_TILE and self.position.y % 8 == 0 then
 		self.up_allowed = false
 		self.state = STATE_SHIMMYING
 	end
 
-	local left = self:get_left()
-	local right = self:get_right()
-	self.left_allowed = not fget(mget(left:unpack()), COLLISION_FLAG) and not (left.x < level.mapX)
-	self.right_allowed = not fget(mget(right:unpack()), COLLISION_FLAG) and not (right.x > level.mapX + 16)
+	self.left_allowed = not fget(mget(left_pos:unpack()), COLLISION_FLAG) and not (left_pos.x < level.mapX)
+	self.right_allowed = not fget(mget(right_pos:unpack()), COLLISION_FLAG) and not (right_pos.x > level.mapX + 16)
 
 	self.shoot_left_allowed = mget(self:get_floor_left():unpack()) == BRICK_TILE and not fget(left_tile, BLOCK_ZAP_FLAG)
 	self.shoot_right_allowed = mget(self:get_floor_right():unpack()) == BRICK_TILE and not fget(right_tile, BLOCK_ZAP_FLAG)
@@ -421,7 +422,7 @@ function Player:get_input()
 			end
 		end
 
-		if self.shoot_left_allowed and btn(4) then
+		if self.shoot_left_allowed and btn(swapped_controls and 5 or 4) then
 			-- O
 			self:shoot(true)
 			self.facing_left = true
@@ -430,7 +431,7 @@ function Player:get_input()
 			self.dx = 0
 			self.dy = 0
 		end
-		if self.shoot_right_allowed and btn(5) then
+		if self.shoot_right_allowed and btn(swapped_controls and 4 or 5) then
 			-- X
 			self:shoot(false)
 			self.facing_left = false
@@ -1038,6 +1039,7 @@ frame = 0
 level_loaded = false
 running = false
 current_level_id = 0
+swapped_controls = false -- this should be true upon release
 
 levels = {
 	0,
@@ -1089,9 +1091,13 @@ end
 function _init()
 	set_palette(0)
 	show_main_menu()
-	local test = Vector:new(2, 3)
-	local tx, ty = test:unpack()
-	printh(test)
+	-- 142 is the O key
+	menuitem(1, "🅾️ digs right", swap_controls)
+end
+
+function swap_controls()
+	swapped_controls = not swapped_controls
+	menuitem(1, "🅾️ digs left", swap_controls)
 end
 
 function show_main_menu()

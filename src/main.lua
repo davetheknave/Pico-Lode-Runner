@@ -37,6 +37,7 @@ frame = 0
 level_loaded = false
 running = false
 current_level_id = 0
+swapped_controls = false -- this should be true upon release
 
 levels = {
 	0,
@@ -88,9 +89,13 @@ end
 function _init()
 	set_palette(0)
 	show_main_menu()
-	local test = Vector:new(2, 3)
-	local tx, ty = test:unpack()
-	printh(test)
+	-- 142 is the O key
+	menuitem(1, "\142 digs left", swap_controls)
+end
+
+function swap_controls()
+	swapped_controls = not swapped_controls
+	menuitem(1, "\142 digs right", swap_controls)
 end
 
 function show_main_menu()
