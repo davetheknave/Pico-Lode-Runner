@@ -103,6 +103,7 @@ function Character:move_to(position)
 end
 
 function Character:check_mobility()
+	-- If the character is shooting, they can't move
 	if self.state == STATE_SHOOTING then
 		if time() - self.last_state_change >= SHOOT_DURATION then
 			self.state = STATE_STANDING
@@ -115,16 +116,25 @@ function Character:check_mobility()
 		self.up_allowed = false
 		return
 	end
-	-- Get surroundings and determine what movement is possible
-	local below = self:get_floor()
-	local floor = mget(below:unpack())
+	-- Get surroundings
+	local self_pos = self:get_tile()
+	local self_tile = mget(self_pos:unpack())
+	local below_pos = self:get_floor()
+	local below_tile = mget(below_pos:unpack())
+	local above_pos = self:get_ceiling()
+	local above_tile = mget(above_pos:unpack())
+	local left_pos = self:get_left()
+	local left_tile = mget(self_pos.x - 1, self_pos.y)
+	local right_pos = self:get_right()
+	local right_tile = mget(self_pos.x + 1, self_pos.y)
+
+	local touching_ladder = self_tile == LADDER_TILE or below_tile == LADDER_TILE
 	local grounded = self:check_grounded()
-	local player_tile = mget(self:get_tile():unpack())
-	local touching_ladder = player_tile == LADDER_TILE or floor == LADDER_TILE
+
+	-- Check movement
 
 	self.down_allowed = not grounded
-
-	if floor == LADDER_TILE or grounded then
+	if below_tile == LADDER_TILE or grounded then
 		self.state = STATE_STANDING
 	else
 		self.state = STATE_FALLING
@@ -135,30 +145,25 @@ function Character:check_mobility()
 		if not grounded then
 			self.state = STATE_CLIMBING
 		end
-		if not ((self.position.y % 8 == 0) and not (player_tile == LADDER_TILE)) then
+		if not ((self.position.y % 8 == 0) and not (self_tile == LADDER_TILE)) then
 			self.up_allowed = true
 		else
 			self.state = STATE_STANDING
 		end
 	end
-	local ceiling = self:get_ceiling()
-	if fget(mget(ceiling:unpack()), COLLISION_FLAG) or ceiling.y < level.mapY then
+	if fget(above_tile, COLLISION_FLAG) or above_pos.y < level.mapY then
 		self.up_allowed = false
 	end
-	if player_tile == SHIMMY_TILE and self.position.y % 8 == 0 then
+	if self_tile == SHIMMY_TILE and self.position.y % 8 == 0 then
 		self.up_allowed = false
 		self.state = STATE_SHIMMYING
 	end
-	local left = self:get_left()
-	local right = self:get_right()
-	self.left_allowed = not fget(mget(left:unpack()), COLLISION_FLAG) and not (left.x < level.mapX)
-	self.right_allowed = not fget(mget(right:unpack()), COLLISION_FLAG) and not (right.x > level.mapX + 16)
 
-	local tile = self:get_tile()
-	local approx_left = mget(tile.x - 1, tile.y)
-	local approx_right = mget(tile.x + 1, tile.y)
-	self.shoot_left_allowed = mget(self:get_floor_left():unpack()) == BRICK_TILE and not fget(approx_left, BLOCK_ZAP_FLAG)
-	self.shoot_right_allowed = mget(self:get_floor_right():unpack()) == BRICK_TILE and not fget(approx_right, BLOCK_ZAP_FLAG)
+	self.left_allowed = not fget(mget(left_pos:unpack()), COLLISION_FLAG) and not (left_pos.x < level.mapX)
+	self.right_allowed = not fget(mget(right_pos:unpack()), COLLISION_FLAG) and not (right_pos.x > level.mapX + 16)
+
+	self.shoot_left_allowed = mget(self:get_floor_left():unpack()) == BRICK_TILE and not fget(left_tile, BLOCK_ZAP_FLAG)
+	self.shoot_right_allowed = mget(self:get_floor_right():unpack()) == BRICK_TILE and not fget(right_tile, BLOCK_ZAP_FLAG)
 end
 
 function Character:get_input()
@@ -168,7 +173,19 @@ end
 function Character:check_grounded()
 	local floor = self:get_floor()
 	local floor_tile = mget(floor:unpack())
-	return flr(floor.y) >= (level.mapY + 16) or (fget(floor_tile, COLLISION_FLAG) and not (floor_tile == ONE_WAY_BRICK))
+	return flr(floor.y) >= (level.mapY + 16) or (fget(floor_tile, COLLISION_FLAG) and not (floor_tile == ONE_WAY_BRICK)) or self:check_standing_on_enemy()
+end
+
+function Character:check_standing_on_enemy()
+	for e in all(enemies) do
+		if abs(self.position.x - e.position.x) <= 4 then
+			local vDistance = e.position.y - self.position.y
+			if vDistance <= 8 and vDistance >= 7 then
+				return true
+			end
+		end
+	end
+	return false
 end
 
 function Character:update_movement()

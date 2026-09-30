@@ -238,6 +238,7 @@ function Character:move_to(position)
 end
 
 function Character:check_mobility()
+	-- If the character is shooting, they can't move
 	if self.state == STATE_SHOOTING then
 		if time() - self.last_state_change >= SHOOT_DURATION then
 			self.state = STATE_STANDING
@@ -250,16 +251,22 @@ function Character:check_mobility()
 		self.up_allowed = false
 		return
 	end
-	-- Get surroundings and determine what movement is possible
-	local below = self:get_floor()
-	local floor = mget(below:unpack())
+	-- Get surroundings
+	local below_pos = self:get_floor()
+	local below_tile = mget(below_pos:unpack())
+	local map_pos = self:get_tile()
+	local map_tile = mget(map_pos:unpack())
+	local ceiling = self:get_ceiling()
+	local left_tile = mget(map_pos.x - 1, map_pos.y)
+	local right_tile = mget(map_pos.x + 1, map_pos.y)
+
+	local touching_ladder = map_tile == LADDER_TILE or below_tile == LADDER_TILE
 	local grounded = self:check_grounded()
-	local player_tile = mget(self:get_tile():unpack())
-	local touching_ladder = player_tile == LADDER_TILE or floor == LADDER_TILE
+
+	-- Check movement
 
 	self.down_allowed = not grounded
-
-	if floor == LADDER_TILE or grounded then
+	if below_tile == LADDER_TILE or grounded then
 		self.state = STATE_STANDING
 	else
 		self.state = STATE_FALLING
@@ -270,30 +277,27 @@ function Character:check_mobility()
 		if not grounded then
 			self.state = STATE_CLIMBING
 		end
-		if not ((self.position.y % 8 == 0) and not (player_tile == LADDER_TILE)) then
+		if not ((self.position.y % 8 == 0) and not (map_tile == LADDER_TILE)) then
 			self.up_allowed = true
 		else
 			self.state = STATE_STANDING
 		end
 	end
-	local ceiling = self:get_ceiling()
 	if fget(mget(ceiling:unpack()), COLLISION_FLAG) or ceiling.y < level.mapY then
 		self.up_allowed = false
 	end
-	if player_tile == SHIMMY_TILE and self.position.y % 8 == 0 then
+	if map_tile == SHIMMY_TILE and self.position.y % 8 == 0 then
 		self.up_allowed = false
 		self.state = STATE_SHIMMYING
 	end
+
 	local left = self:get_left()
 	local right = self:get_right()
 	self.left_allowed = not fget(mget(left:unpack()), COLLISION_FLAG) and not (left.x < level.mapX)
 	self.right_allowed = not fget(mget(right:unpack()), COLLISION_FLAG) and not (right.x > level.mapX + 16)
 
-	local tile = self:get_tile()
-	local approx_left = mget(tile.x - 1, tile.y)
-	local approx_right = mget(tile.x + 1, tile.y)
-	self.shoot_left_allowed = mget(self:get_floor_left():unpack()) == BRICK_TILE and not fget(approx_left, BLOCK_ZAP_FLAG)
-	self.shoot_right_allowed = mget(self:get_floor_right():unpack()) == BRICK_TILE and not fget(approx_right, BLOCK_ZAP_FLAG)
+	self.shoot_left_allowed = mget(self:get_floor_left():unpack()) == BRICK_TILE and not fget(left_tile, BLOCK_ZAP_FLAG)
+	self.shoot_right_allowed = mget(self:get_floor_right():unpack()) == BRICK_TILE and not fget(right_tile, BLOCK_ZAP_FLAG)
 end
 
 function Character:get_input()
@@ -303,7 +307,19 @@ end
 function Character:check_grounded()
 	local floor = self:get_floor()
 	local floor_tile = mget(floor:unpack())
-	return flr(floor.y) >= (level.mapY + 16) or (fget(floor_tile, COLLISION_FLAG) and not (floor_tile == ONE_WAY_BRICK))
+	return flr(floor.y) >= (level.mapY + 16) or (fget(floor_tile, COLLISION_FLAG) and not (floor_tile == ONE_WAY_BRICK)) or self:check_standing_on_enemy()
+end
+
+function Character:check_standing_on_enemy()
+	for e in all(enemies) do
+		if abs(self.position.x - e.position.x) <= 4 then
+			local vDistance = e.position.y - self.position.y
+			if vDistance <= 8 and vDistance >= 7 then
+				return true
+			end
+		end
+	end
+	return false
 end
 
 function Character:update_movement()
@@ -1250,13 +1266,13 @@ dddddddddddddddddedededeededededdddddddddddddddddedededeededededdddddddddddddddd
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 11110000000081000081000000411111000000000000000041000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-11114112111111111111111112121111000000000000000041000000000000000000000000000000000000000000000000000000000000000000000000000000
+11114112111111111111111112121111000000000000000041616161610000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 111141000000810081a1008100001111000000000000000041000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-11111212111111111111111112121111000000000000000041000000000000000000000000000000000000000000000000000000000000000000000000000000
+11111212111111111111111112121111000000000000000041000011a11100000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-11111111111111111111111111111111000000000000910041008100000000000000000000000000000000000000000000000000000000000000000000000000
+11111111111111111111111111111111000000000000910041008111a11100000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 11111111111111111111111111111111121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212
 12121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212
