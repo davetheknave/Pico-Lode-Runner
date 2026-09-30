@@ -56,20 +56,18 @@ function Player:get_input()
 end
 
 function Player:collide(other)
-	if manhattan_distance(self:get_tile(), other:get_tile()) <= 1 then
+	if manhattan_distance(self.map_pos, other.map_pos) <= 1 then
 		lose()
 	end
 end
 
 function Player:update()
-	self:check_mobility()
-	self:get_input()
-	self:update_movement()
+	Character.update(self)
 	-- game logic
-	local next_pos = self:get_tile()
+	local next_pos = self.map_pos
 	local next_tile = mget(next_pos:unpack())
 	if next_tile == GOLD_TILE and manhattan_distance(self.position:scale(1 / 8), next_pos) <= 0.25 then
-		self:get_gold(self:get_tile())
+		self:get_gold(self.map_pos)
 	end
 end
 

@@ -117,16 +117,15 @@ function Character:check_mobility()
 		return
 	end
 	-- Get surroundings
-	local self_pos = self:get_tile()
-	local self_tile = mget(self_pos:unpack())
+	local self_tile = mget(self.map_pos:unpack())
 	local below_pos = self:get_floor()
 	local below_tile = mget(below_pos:unpack())
 	local above_pos = self:get_ceiling()
 	local above_tile = mget(above_pos:unpack())
 	local left_pos = self:get_left()
-	local left_tile = mget(self_pos.x - 1, self_pos.y)
+	local left_tile = mget(self.map_pos.x - 1, self.map_pos.y)
 	local right_pos = self:get_right()
-	local right_tile = mget(self_pos.x + 1, self_pos.y)
+	local right_tile = mget(self.map_pos.x + 1, self.map_pos.y)
 
 	local touching_ladder = self_tile == LADDER_TILE or below_tile == LADDER_TILE
 	local grounded = self:check_grounded()
@@ -243,6 +242,7 @@ function Character:change_state(new_state)
 end
 
 function Character:update()
+	self.map_pos = self:get_tile()
 	self:check_mobility()
 	self:get_input()
 	self:update_movement()
