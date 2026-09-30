@@ -75,7 +75,7 @@ function aabb(x1, y1, w1, h1, x2, y2, w2, h2)
 end
 
 function aabb_sprite(pos1, pos2)
-    return aabb(pos1.x * 8, pos1.y * 8, 8, 8, pos2.x * 8, pos2.y * 8, 8, 8)
+    return aabb(pos1.x, pos1.y, 8, 8, pos2.x, pos2.y, 8, 8)
 end
 end
 package._c["animator"]=function()
@@ -142,8 +142,6 @@ package._c["character"]=function()
 --[[$const]] SHOOT_DURATION = 0.5
 
 Character = {
-	x = 0,
-	y = 0,
 	dx = 0,
 	dy = 0,
 	state = STATE_STANDING,
@@ -199,28 +197,24 @@ function Character:new()
 	return instance
 end
 
-function Character:pos()
-	return { x = self.x / 8, y = self.y / 8 }
-end
-
 function Character:get_tile()
-	return Vector:new(round(self.x / 8), round(self.y / 8))
+	return Vector:new(round(self.position.x / 8), round(self.position.y / 8))
 end
 
 function Character:get_floor()
-	return Vector:new(round(self.x / 8), flr(self.y / 8 + 1))
+	return Vector:new(round(self.position.x / 8), flr(self.position.y / 8 + 1))
 end
 
 function Character:get_ceiling()
-	return Vector:new(round(self.x / 8), ceil(self.y / 8 - 1))
+	return Vector:new(round(self.position.x / 8), ceil(self.position.y / 8 - 1))
 end
 
 function Character:get_left()
-	return Vector:new(ceil(self.x / 8 - 1), round(self.y / 8))
+	return Vector:new(ceil(self.position.x / 8 - 1), round(self.position.y / 8))
 end
 
 function Character:get_right()
-	return Vector:new(flr(self.x / 8 + 1), round(self.y / 8))
+	return Vector:new(flr(self.position.x / 8 + 1), round(self.position.y / 8))
 end
 
 function Character:get_floor_left()
@@ -235,9 +229,8 @@ function Character:get_floor_right()
 	return floor
 end
 
-function Character:move_to(x, y)
-	self.x = x
-	self.y = y
+function Character:move_to(position)
+	self.position = position:copy()
 end
 
 function Character:check_mobility()
@@ -273,7 +266,7 @@ function Character:check_mobility()
 		if not grounded then
 			self.state = STATE_CLIMBING
 		end
-		if not ((self.y % 8 == 0) and not (player_tile == LADDER_TILE)) then
+		if not ((self.position.y % 8 == 0) and not (player_tile == LADDER_TILE)) then
 			self.up_allowed = true
 		else
 			self.state = STATE_STANDING
@@ -283,7 +276,7 @@ function Character:check_mobility()
 	if fget(mget(ceiling:unpack()), COLLISION_FLAG) or ceiling.y < level.mapY then
 		self.up_allowed = false
 	end
-	if player_tile == SHIMMY_TILE and self.y % 8 == 0 then
+	if player_tile == SHIMMY_TILE and self.position.y % 8 == 0 then
 		self.up_allowed = false
 		self.state = STATE_SHIMMYING
 	end
@@ -292,8 +285,9 @@ function Character:check_mobility()
 	self.left_allowed = not fget(mget(left:unpack()), COLLISION_FLAG) and not (left.x < level.mapX)
 	self.right_allowed = not fget(mget(right:unpack()), COLLISION_FLAG) and not (right.x > level.mapX + 16)
 
-	local approx_left = mget(round(self:pos().x) - 1, round(self:pos().y))
-	local approx_right = mget(round(self:pos().x) + 1, round(self:pos().y))
+	local tile = self:get_tile()
+	local approx_left = mget(tile.x - 1, tile.y)
+	local approx_right = mget(tile.x + 1, tile.y)
 	self.shoot_left_allowed = mget(self:get_floor_left():unpack()) == BRICK_TILE and not fget(approx_left, BLOCK_ZAP_FLAG)
 	self.shoot_right_allowed = mget(self:get_floor_right():unpack()) == BRICK_TILE and not fget(approx_right, BLOCK_ZAP_FLAG)
 end
@@ -313,30 +307,30 @@ function Character:update_movement()
 		printh("Trying to move diagonally")
 	else
 		if self.dx != 0 or self.state == STATE_SHOOTING then
-			if self.y % 8 >= 4 then
-				self.dy = min(self.y % 8, SPEED)
+			if self.position.y % 8 >= 4 then
+				self.dy = min(self.position.y % 8, SPEED)
 			else
-				self.dy = max(-(self.y % 8), -SPEED)
+				self.dy = max(-(self.position.y % 8), -SPEED)
 			end
 		end
 		if self.dy != 0 or self.state == STATE_FALLING or self.state == STATE_SHOOTING then
-			if self.x % 8 >= 4 then
-				self.dx = min(self.x % 8, SPEED)
+			if self.position.x % 8 >= 4 then
+				self.dx = min(self.position.x % 8, SPEED)
 			else
-				self.dx = max(-(self.x % 8), -SPEED)
+				self.dx = max(-(self.position.x % 8), -SPEED)
 			end
 		end
 	end
 
 	-- Resolve movement
-	self.x += self.dx
-	self.y += self.dy
+	self.position.x += self.dx
+	self.position.y += self.dy
 
 	if self.state == STATE_FALLING then
-		self.y += GRAVITY
+		self.position.y += GRAVITY
 	end
 	if self:check_grounded() then
-		self.y = flr(self.y / 8) * 8
+		self.position.y = flr(self.position.y / 8) * 8
 	end
 	if (self.dx != 0 or self.dy != 0) then
 		if self.state == STATE_STANDING then
@@ -369,7 +363,7 @@ end
 
 function Character:draw()
 	local current_animation = self.animations[self.state]
-	current_animation:draw(self.sprite, self.x, self.y, self.facing_left)
+	current_animation:draw(self.sprite, self.position.x, self.position.y, self.facing_left)
 end
 end
 package._c["player"]=function()
@@ -431,7 +425,7 @@ function Player:get_input()
 end
 
 function Player:collide(other)
-	if manhattan_distance(self:pos(), other:pos()) <= 1 then
+	if manhattan_distance(self:get_tile(), other:get_tile()) <= 1 then
 		lose()
 	end
 end
@@ -443,7 +437,7 @@ function Player:update()
 	-- game logic
 	local next_tile = mget(self:get_tile():unpack())
 	if next_tile == GOLD_TILE then
-		self:get_gold(self:pos())
+		self:get_gold(self:get_tile())
 	end
 end
 
@@ -487,8 +481,8 @@ function Enemy:new(name)
 end
 
 function Enemy:check_path_to_player()
-    local myy = round(self.y / 8)
-    for x = round(self.x / 8), round(player.x / 8), (self.x < player.x and 1 or -1) do
+    local myy = round(self.position.y / 8)
+    for x = round(self.position.x / 8), round(player.position.x / 8), (self.position.x < player.position.x and 1 or -1) do
         local next_tile = mget(x, myy)
         -- printh(x .. "," .. myy .. ":" .. next_tile)
         if next_tile != LADDER_TILE and next_tile != SHIMMY_TILE then
@@ -506,10 +500,10 @@ function Enemy:get_input()
     self.dx = 0
     self.dy = 0
     -- Rule 1: get player if on same level
-    if abs(player.y - self.y) <= 4 and self:check_path_to_player() then
-        if self.x - player.x > 0 and self.left_allowed then
+    if abs(player.position.y - self.position.y) <= 4 and self:check_path_to_player() then
+        if self.position.x - player.position.x > 0 and self.left_allowed then
             self.dx = -SPEED
-        elseif self.x - player.x < 0 and self.right_allowed then
+        elseif self.position.x - player.position.x < 0 and self.right_allowed then
             self.dx = SPEED
         end
     end
@@ -561,7 +555,7 @@ function Level:place_player(player)
             local maptile = mget(x, y)
             if maptile == PLAYER_START_TILE then
                 mset(x, y, 0)
-                player:move_to(x * 8, y * 8)
+                player:move_to(Vector:new(x * 8, y * 8))
                 player:reset()
                 return
             end
@@ -577,7 +571,7 @@ function Level:place_enemies(enemies)
             if maptile == ENEMY_SPAWN_TILE then
                 mset(x, y, 0)
                 local enemy = Enemy:new(index)
-                enemy:move_to(x * 8, y * 8)
+                enemy:move_to(Vector:new(x * 8, y * 8))
                 enemies[#enemies + 1] = enemy
                 index += 1
             end
@@ -1097,7 +1091,7 @@ end
 
 function player:get_gold(pos)
 	sfx(GOLD_SOUND)
-	if level:get_gold(round(pos.x), round(pos.y)) then
+	if level:get_gold(pos.x, pos.y) then
 		level:show_secret_ladders()
 	end
 end
@@ -1105,14 +1099,14 @@ end
 function check_collisions()
 	for e in all(enemies) do
 		for e2 in all(enemies) do
-			if e != e2 and aabb_sprite(e:pos(), e2:pos()) then
+			if e != e2 and aabb_sprite(e.position, e2.position) then
 				printh("enemy collision")
 				if e.collide != nil then
 					e:collide(e2)
 				end
 			end
 		end
-		if aabb_sprite(e:pos(), player:pos()) then
+		if aabb_sprite(e.position, player.position) then
 			printh("player collision")
 			if e.collide != nil then
 				e:collide(player)
@@ -1135,7 +1129,7 @@ function _update()
 		end
 		level:update()
 		check_collisions()
-		if level.gold == 0 and round(player:pos().y) == level.mapY then
+		if level.gold == 0 and round(player.position.y / 8) == level.mapY then
 			win()
 		end
 	end
@@ -1292,6 +1286,7 @@ dddddddddddddddddedededeededededdddddddddddddddddedededeededededdddddddddddddddd
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006060606060606068606060606060606
 12121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212
 12121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121207070707070707078707070707070707
+
 __gff__
 0000000000000000000000000000000000858500840084008400008484000080808582828282828080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -1393,3 +1388,69 @@ __sfx__
 010400001d54324563005030050300503005030050300503115331855300503005030050300503005030050311523185430050300503005030050300503005031151318523005030050300503005030050300503
 080300002841328433284132843328413284332841328433284132843324403004030040300403004030040300403004030040300403004030040300403004030040300403004030040300403004030040300403
 791000002953535555355053550500500095002f50000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500
+__music__
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+00 41424344
+

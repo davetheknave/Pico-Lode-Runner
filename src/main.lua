@@ -114,7 +114,7 @@ end
 
 function player:get_gold(pos)
 	sfx(GOLD_SOUND)
-	if level:get_gold(round(pos.x), round(pos.y)) then
+	if level:get_gold(pos.x, pos.y) then
 		level:show_secret_ladders()
 	end
 end
@@ -122,14 +122,14 @@ end
 function check_collisions()
 	for e in all(enemies) do
 		for e2 in all(enemies) do
-			if e != e2 and aabb_sprite(e:pos(), e2:pos()) then
+			if e != e2 and aabb_sprite(e.position, e2.position) then
 				printh("enemy collision")
 				if e.collide != nil then
 					e:collide(e2)
 				end
 			end
 		end
-		if aabb_sprite(e:pos(), player:pos()) then
+		if aabb_sprite(e.position, player.position) then
 			printh("player collision")
 			if e.collide != nil then
 				e:collide(player)
@@ -152,7 +152,7 @@ function _update()
 		end
 		level:update()
 		check_collisions()
-		if level.gold == 0 and round(player:pos().y) == level.mapY then
+		if level.gold == 0 and round(player.position.y / 8) == level.mapY then
 			win()
 		end
 	end

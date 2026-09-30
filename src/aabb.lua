@@ -7,5 +7,5 @@ function aabb(x1, y1, w1, h1, x2, y2, w2, h2)
 end
 
 function aabb_sprite(pos1, pos2)
-    return aabb(pos1.x * 8, pos1.y * 8, 8, 8, pos2.x * 8, pos2.y * 8, 8, 8)
+    return aabb(pos1.x, pos1.y, 8, 8, pos2.x, pos2.y, 8, 8)
 end

@@ -11,8 +11,6 @@
 --[[$const]] SHOOT_DURATION = 0.5
 
 Character = {
-	x = 0,
-	y = 0,
 	dx = 0,
 	dy = 0,
 	state = STATE_STANDING,
@@ -68,28 +66,24 @@ function Character:new()
 	return instance
 end
 
-function Character:pos()
-	return { x = self.x / 8, y = self.y / 8 }
-end
-
 function Character:get_tile()
-	return Vector:new(round(self.x / 8), round(self.y / 8))
+	return Vector:new(round(self.position.x / 8), round(self.position.y / 8))
 end
 
 function Character:get_floor()
-	return Vector:new(round(self.x / 8), flr(self.y / 8 + 1))
+	return Vector:new(round(self.position.x / 8), flr(self.position.y / 8 + 1))
 end
 
 function Character:get_ceiling()
-	return Vector:new(round(self.x / 8), ceil(self.y / 8 - 1))
+	return Vector:new(round(self.position.x / 8), ceil(self.position.y / 8 - 1))
 end
 
 function Character:get_left()
-	return Vector:new(ceil(self.x / 8 - 1), round(self.y / 8))
+	return Vector:new(ceil(self.position.x / 8 - 1), round(self.position.y / 8))
 end
 
 function Character:get_right()
-	return Vector:new(flr(self.x / 8 + 1), round(self.y / 8))
+	return Vector:new(flr(self.position.x / 8 + 1), round(self.position.y / 8))
 end
 
 function Character:get_floor_left()
@@ -104,9 +98,8 @@ function Character:get_floor_right()
 	return floor
 end
 
-function Character:move_to(x, y)
-	self.x = x
-	self.y = y
+function Character:move_to(position)
+	self.position = position:copy()
 end
 
 function Character:check_mobility()
@@ -142,7 +135,7 @@ function Character:check_mobility()
 		if not grounded then
 			self.state = STATE_CLIMBING
 		end
-		if not ((self.y % 8 == 0) and not (player_tile == LADDER_TILE)) then
+		if not ((self.position.y % 8 == 0) and not (player_tile == LADDER_TILE)) then
 			self.up_allowed = true
 		else
 			self.state = STATE_STANDING
@@ -152,7 +145,7 @@ function Character:check_mobility()
 	if fget(mget(ceiling:unpack()), COLLISION_FLAG) or ceiling.y < level.mapY then
 		self.up_allowed = false
 	end
-	if player_tile == SHIMMY_TILE and self.y % 8 == 0 then
+	if player_tile == SHIMMY_TILE and self.position.y % 8 == 0 then
 		self.up_allowed = false
 		self.state = STATE_SHIMMYING
 	end
@@ -161,8 +154,9 @@ function Character:check_mobility()
 	self.left_allowed = not fget(mget(left:unpack()), COLLISION_FLAG) and not (left.x < level.mapX)
 	self.right_allowed = not fget(mget(right:unpack()), COLLISION_FLAG) and not (right.x > level.mapX + 16)
 
-	local approx_left = mget(round(self:pos().x) - 1, round(self:pos().y))
-	local approx_right = mget(round(self:pos().x) + 1, round(self:pos().y))
+	local tile = self:get_tile()
+	local approx_left = mget(tile.x - 1, tile.y)
+	local approx_right = mget(tile.x + 1, tile.y)
 	self.shoot_left_allowed = mget(self:get_floor_left():unpack()) == BRICK_TILE and not fget(approx_left, BLOCK_ZAP_FLAG)
 	self.shoot_right_allowed = mget(self:get_floor_right():unpack()) == BRICK_TILE and not fget(approx_right, BLOCK_ZAP_FLAG)
 end
@@ -182,30 +176,30 @@ function Character:update_movement()
 		printh("Trying to move diagonally")
 	else
 		if self.dx != 0 or self.state == STATE_SHOOTING then
-			if self.y % 8 >= 4 then
-				self.dy = min(self.y % 8, SPEED)
+			if self.position.y % 8 >= 4 then
+				self.dy = min(self.position.y % 8, SPEED)
 			else
-				self.dy = max(-(self.y % 8), -SPEED)
+				self.dy = max(-(self.position.y % 8), -SPEED)
 			end
 		end
 		if self.dy != 0 or self.state == STATE_FALLING or self.state == STATE_SHOOTING then
-			if self.x % 8 >= 4 then
-				self.dx = min(self.x % 8, SPEED)
+			if self.position.x % 8 >= 4 then
+				self.dx = min(self.position.x % 8, SPEED)
 			else
-				self.dx = max(-(self.x % 8), -SPEED)
+				self.dx = max(-(self.position.x % 8), -SPEED)
 			end
 		end
 	end
 
 	-- Resolve movement
-	self.x += self.dx
-	self.y += self.dy
+	self.position.x += self.dx
+	self.position.y += self.dy
 
 	if self.state == STATE_FALLING then
-		self.y += GRAVITY
+		self.position.y += GRAVITY
 	end
 	if self:check_grounded() then
-		self.y = flr(self.y / 8) * 8
+		self.position.y = flr(self.position.y / 8) * 8
 	end
 	if (self.dx != 0 or self.dy != 0) then
 		if self.state == STATE_STANDING then
@@ -238,5 +232,5 @@ end
 
 function Character:draw()
 	local current_animation = self.animations[self.state]
-	current_animation:draw(self.sprite, self.x, self.y, self.facing_left)
+	current_animation:draw(self.sprite, self.position.x, self.position.y, self.facing_left)
 end

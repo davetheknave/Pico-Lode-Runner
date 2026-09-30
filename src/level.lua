@@ -38,7 +38,7 @@ function Level:place_player(player)
             local maptile = mget(x, y)
             if maptile == PLAYER_START_TILE then
                 mset(x, y, 0)
-                player:move_to(x * 8, y * 8)
+                player:move_to(Vector:new(x * 8, y * 8))
                 player:reset()
                 return
             end
@@ -54,7 +54,7 @@ function Level:place_enemies(enemies)
             if maptile == ENEMY_SPAWN_TILE then
                 mset(x, y, 0)
                 local enemy = Enemy:new(index)
-                enemy:move_to(x * 8, y * 8)
+                enemy:move_to(Vector:new(x * 8, y * 8))
                 enemies[#enemies + 1] = enemy
                 index += 1
             end

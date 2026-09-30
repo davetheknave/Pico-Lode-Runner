@@ -11,8 +11,8 @@ function Enemy:new(name)
 end
 
 function Enemy:check_path_to_player()
-    local myy = round(self.y / 8)
-    for x = round(self.x / 8), round(player.x / 8), (self.x < player.x and 1 or -1) do
+    local myy = round(self.position.y / 8)
+    for x = round(self.position.x / 8), round(player.position.x / 8), (self.position.x < player.position.x and 1 or -1) do
         local next_tile = mget(x, myy)
         -- printh(x .. "," .. myy .. ":" .. next_tile)
         if next_tile != LADDER_TILE and next_tile != SHIMMY_TILE then
@@ -30,10 +30,10 @@ function Enemy:get_input()
     self.dx = 0
     self.dy = 0
     -- Rule 1: get player if on same level
-    if abs(player.y - self.y) <= 4 and self:check_path_to_player() then
-        if self.x - player.x > 0 and self.left_allowed then
+    if abs(player.position.y - self.position.y) <= 4 and self:check_path_to_player() then
+        if self.position.x - player.position.x > 0 and self.left_allowed then
             self.dx = -SPEED
-        elseif self.x - player.x < 0 and self.right_allowed then
+        elseif self.position.x - player.position.x < 0 and self.right_allowed then
             self.dx = SPEED
         end
     end
