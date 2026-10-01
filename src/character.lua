@@ -210,12 +210,12 @@ function Character:update_movement()
 	end
 
 	-- Resolve movement
+	if self.state == STATE_FALLING then
+		self.dy = self.speed
+	end
+
 	self.position.x += self.dx
 	self.position.y += self.dy
-
-	if self.state == STATE_FALLING then
-		self.position.y += self.speed
-	end
 	if self:check_grounded() then
 		self.position.y = flr(self.position.y / 8) * 8
 	end
