@@ -120,18 +120,18 @@ function Level:update()
     -- update zapped bricks
     for b in all(self.bricks) do
         if b[3] != -1 then
-            -- Zapping
+            -- Beginning
             if b[3] <= 5 then
                 mset(b[1], b[2], BRICK_TILE + b[3])
-            elseif b[3] >= BRICK_END then
-                mset(b[1], b[2], BRICK_TILE + 5 - (b[3] - BRICK_END) + 1)
+            elseif b[3] >= (BRICK_END - 5) then
+                mset(b[1], b[2], BRICK_TILE + BRICK_END - b[3])
             end
-            -- Unzapping
-            if b[3] > BRICK_END + 5 then
+
+            if b[3] >= BRICK_END then
                 b[3] = -1
-                return
+            else
+                b[3] += 1 -- tick up
             end
-            b[3] += 1 -- tick up
         end
     end
 end
