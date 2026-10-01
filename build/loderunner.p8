@@ -1068,7 +1068,7 @@ return l[p]
 end
 -- settings
 --[[$const]] SPEED = 1
---[[$const]] ENEMY_SPEED = SPEED * 0.56
+--[[$const]] ENEMY_SPEED = SPEED * 0.5
 --[[$const]] ANIMATION_RATE = 4
 -- brick lifecycle
 --[[$const]] BRICK_END = 252 -- 7 sec * 30 fps * 1.2
@@ -1153,22 +1153,28 @@ function load_level(levelID)
 	effects:horizontal_wipe(3, function() running = true end)
 	level_loaded = true
 	running = false
+	menuitem(1, "restart level", function() load_level(current_level_id) end)
 end
 
 function _init()
 	set_palette(0)
 	show_main_menu()
 	-- 142 is the O key
-	menuitem(1, "🅾️ digs left", swap_controls)
-	menuitem(2, "restart level", function() load_level(current_level_id) end)
+	menuitem(2, "🅾️ digs left", swap_controls)
 end
 
-function swap_controls()
-	swapped_controls = not swapped_controls
-	menuitem(1, "🅾️ digs right", swap_controls)
+function swap_controls(b)
+	if b == 112 then
+		return false
+	else
+		swapped_controls = not swapped_controls
+		menuitem(2, "🅾️ digs " .. (swapped_controls and "right" or "left"), swap_controls)
+		return true
+	end
 end
 
 function show_main_menu()
+	menuitem(1)
 	gui:make_main_menu(load_level)
 end
 
