@@ -545,6 +545,12 @@ function Player:draw()
 			Character.draw(self)
 		end
 	end
+	-- debug.color = DEBUG_DEFAULT_COLOR
+	-- printh(self.position)
+	-- if self.up_allowed then debug.print("U", self.position.x + 3, self.position.y - 8) end
+	-- if self.down_allowed then debug.print("D", self.position.x + 3, self.position.y + 8) end
+	-- if self.left_allowed then debug.print("L", self.position.x - 5, self.position.y) end
+	-- if self.right_allowed then debug.print("R", self.position.x + 8, self.position.y) end
 end
 end
 package._c["enemy"]=function()
@@ -1061,11 +1067,11 @@ if (l[p]==nil) l[p]=true
 return l[p]
 end
 -- settings
---[[$const]] SPEED = 1.2
+--[[$const]] SPEED = 1
 --[[$const]] ENEMY_SPEED = SPEED * 0.56
 --[[$const]] ANIMATION_RATE = 4
 -- brick lifecycle
---[[$const]] BRICK_END = 7 * 30
+--[[$const]] BRICK_END = 252 -- 7 sec * 30 fps * 1.2
 -- flags
 --[[$const]] COLLISION_FLAG = 0
 --[[$const]] KILL_FLAG = 1

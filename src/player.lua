@@ -95,4 +95,10 @@ function Player:draw()
 			Character.draw(self)
 		end
 	end
+	-- debug.color = DEBUG_DEFAULT_COLOR
+	-- printh(self.position)
+	-- if self.up_allowed then debug.print("U", self.position.x + 3, self.position.y - 8) end
+	-- if self.down_allowed then debug.print("D", self.position.x + 3, self.position.y + 8) end
+	-- if self.left_allowed then debug.print("L", self.position.x - 5, self.position.y) end
+	-- if self.right_allowed then debug.print("R", self.position.x + 8, self.position.y) end
 end
