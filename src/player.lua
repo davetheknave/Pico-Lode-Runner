@@ -39,8 +39,7 @@ function Player:get_input()
 			self.last_state_change = time()
 			self.dx = 0
 			self.dy = 0
-		end
-		if self.shoot_right_allowed and btn(swapped_controls and 4 or 5) then
+		elseif self.shoot_right_allowed and btn(swapped_controls and 4 or 5) then
 			-- X
 			self:shoot(false)
 			self.facing_left = false

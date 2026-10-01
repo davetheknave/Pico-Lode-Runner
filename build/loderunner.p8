@@ -403,12 +403,12 @@ function Character:update_movement()
 	end
 
 	-- Resolve movement
+	if self.state == STATE_FALLING then
+		self.dy = self.speed
+	end
+
 	self.position.x += self.dx
 	self.position.y += self.dy
-
-	if self.state == STATE_FALLING then
-		self.position.y += self.speed
-	end
 	if self:check_grounded() then
 		self.position.y = flr(self.position.y / 8) * 8
 	end
@@ -489,8 +489,7 @@ function Player:get_input()
 			self.last_state_change = time()
 			self.dx = 0
 			self.dy = 0
-		end
-		if self.shoot_right_allowed and btn(swapped_controls and 4 or 5) then
+		elseif self.shoot_right_allowed and btn(swapped_controls and 4 or 5) then
 			-- X
 			self:shoot(false)
 			self.facing_left = false
