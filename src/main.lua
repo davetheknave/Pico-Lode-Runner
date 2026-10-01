@@ -1,6 +1,6 @@
 -- settings
 --[[$const]] SPEED = 1
---[[$const]] ENEMY_SPEED = SPEED * 0.56
+--[[$const]] ENEMY_SPEED = SPEED * 0.5
 --[[$const]] ANIMATION_RATE = 4
 -- brick lifecycle
 --[[$const]] BRICK_END = 252 -- 7 sec * 30 fps * 1.2
