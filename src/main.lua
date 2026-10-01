@@ -92,6 +92,7 @@ function _init()
 	show_main_menu()
 	-- 142 is the O key
 	menuitem(1, "\142 digs left", swap_controls)
+	menuitem(2, "restart level", function() load_level(current_level_id) end)
 end
 
 function swap_controls()

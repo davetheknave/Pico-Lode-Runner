@@ -9,18 +9,18 @@
 --[[$const]] KEY_TILE = 28
 --[[$const]] DOOR_TILE = 27
 
-Level = {
-    mapX = 0,
-    mapY = 0,
-    bricks = {},
-    gold = 0
-}
+Level = {}
 Level.__index = Level
 
 function Level:new(x, y)
-    local instance = setmetatable({}, self)
-    self.mapX = x
-    self.mapY = y
+    local instance = setmetatable(
+        {
+            mapX = x,
+            mapY = y,
+            bricks = {},
+            gold = 0
+        }, self
+    )
     return instance
 end
 

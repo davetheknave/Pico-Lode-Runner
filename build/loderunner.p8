@@ -613,18 +613,18 @@ package._c["level"]=function()
 --[[$const]] KEY_TILE = 28
 --[[$const]] DOOR_TILE = 27
 
-Level = {
-    mapX = 0,
-    mapY = 0,
-    bricks = {},
-    gold = 0
-}
+Level = {}
 Level.__index = Level
 
 function Level:new(x, y)
-    local instance = setmetatable({}, self)
-    self.mapX = x
-    self.mapY = y
+    local instance = setmetatable(
+        {
+            mapX = x,
+            mapY = y,
+            bricks = {},
+            gold = 0
+        }, self
+    )
     return instance
 end
 
@@ -1160,6 +1160,7 @@ function _init()
 	show_main_menu()
 	-- 142 is the O key
 	menuitem(1, "🅾️ digs left", swap_controls)
+	menuitem(2, "restart level", function() load_level(current_level_id) end)
 end
 
 function swap_controls()
