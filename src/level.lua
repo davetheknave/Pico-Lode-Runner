@@ -123,7 +123,7 @@ function Level:update()
             -- Beginning
             if b[3] <= 5 then
                 mset(b[1], b[2], BRICK_TILE + b[3])
-            elseif b[3] >= (BRICK_END - 5) then
+            elseif b[3] >= (BRICK_END - 11) then
                 mset(b[1], b[2], BRICK_TILE + BRICK_END - b[3])
             end
 
