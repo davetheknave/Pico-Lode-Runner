@@ -506,7 +506,7 @@ function Player:get_input()
 end
 
 function Player:collide(other)
-	if manhattan_distance(self.map_pos, other.map_pos) <= 1 then
+	if manhattan_distance(self.map_pos, other.map_pos) <= .5 then
 		lose()
 	end
 end
