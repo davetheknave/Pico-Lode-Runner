@@ -1,6 +1,6 @@
 -- settings
---[[$const]] SPEED = 1
---[[$const]] GRAVITY = SPEED
+--[[$const]] SPEED = 1.2
+--[[$const]] ENEMY_SPEED = SPEED * 0.56
 --[[$const]] ANIMATION_RATE = 4
 -- brick lifecycle
 --[[$const]] BRICK_END = 90

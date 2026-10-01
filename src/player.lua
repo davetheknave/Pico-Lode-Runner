@@ -10,10 +10,10 @@ function Player:get_input()
 			if self.left_allowed and btn(0) then
 				-- left
 				self.facing_left = true
-				self.dx = -SPEED
+				self.dx = -self.speed
 			elseif self.right_allowed and btn(1) then
 				--right
-				self.dx = SPEED
+				self.dx = self.speed
 				self.facing_left = false
 			end
 		end
@@ -23,11 +23,11 @@ function Player:get_input()
 			if self.up_allowed and btn(2) then
 				-- up
 				self.dx = 0
-				self.dy = -SPEED
+				self.dy = -self.speed
 			elseif self.down_allowed and btn(3) then
 				-- down
 				self.dx = 0
-				self.dy = SPEED
+				self.dy = self.speed
 			end
 		end
 
@@ -76,6 +76,7 @@ function Player:new()
 	setmetatable(instance, self)
 	instance.sprite = 1
 	instance.has_moved = false
+	instance.speed = SPEED
 	return instance
 end
 

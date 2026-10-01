@@ -7,6 +7,7 @@ function Enemy:new(name)
     setmetatable(instance, self)
     instance.sprite = 49
     instance.name = name
+    instance.speed = ENEMY_SPEED
     return instance
 end
 
@@ -32,9 +33,9 @@ function Enemy:get_input()
     -- Rule 1: get player if on same level
     if abs(player.position.y - self.position.y) <= 4 and self:check_path_to_player() then
         if self.position.x - player.position.x > 0 and self.left_allowed then
-            self.dx = -SPEED
+            self.dx = -self.speed
         elseif self.position.x - player.position.x < 0 and self.right_allowed then
-            self.dx = SPEED
+            self.dx = self.speed
         end
     end
     if self.dx > 0 then

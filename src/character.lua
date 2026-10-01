@@ -11,6 +11,7 @@
 --[[$const]] SHOOT_DURATION = 0.5
 
 Character = {
+	speed = 0,
 	dx = 0,
 	dy = 0,
 	state = STATE_STANDING,
@@ -194,16 +195,16 @@ function Character:update_movement()
 	else
 		if self.dx != 0 or self.state == STATE_SHOOTING then
 			if self.position.y % 8 >= 4 then
-				self.dy = min(self.position.y % 8, SPEED)
+				self.dy = min(self.position.y % 8, self.speed)
 			else
-				self.dy = max(-(self.position.y % 8), -SPEED)
+				self.dy = max(-(self.position.y % 8), -self.speed)
 			end
 		end
 		if self.dy != 0 or self.state == STATE_FALLING or self.state == STATE_SHOOTING then
 			if self.position.x % 8 >= 4 then
-				self.dx = min(self.position.x % 8, SPEED)
+				self.dx = min(self.position.x % 8, self.speed)
 			else
-				self.dx = max(-(self.position.x % 8), -SPEED)
+				self.dx = max(-(self.position.x % 8), -self.speed)
 			end
 		end
 	end
@@ -213,7 +214,7 @@ function Character:update_movement()
 	self.position.y += self.dy
 
 	if self.state == STATE_FALLING then
-		self.position.y += GRAVITY
+		self.position.y += self.speed
 	end
 	if self:check_grounded() then
 		self.position.y = flr(self.position.y / 8) * 8

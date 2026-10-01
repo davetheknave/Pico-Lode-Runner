@@ -6,6 +6,8 @@
 --[[$const]] SHIMMY_TILE = 22
 --[[$const]] BRICK_TILE = 33
 --[[$const]] ONE_WAY_BRICK = 18
+--[[$const]] KEY_TILE = 28
+--[[$const]] DOOR_TILE = 27
 
 Level = {
     mapX = 0,

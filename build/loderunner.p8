@@ -2,6 +2,64 @@ pico-8 cartridge // http://www.pico-8.com
 version 43
 __lua__
 package={loaded={},_c={}}
+package._c["debug/gizmos"]=function()
+--[[$const]] DEBUG_DEFAULT_COLOR = 2
+
+debug = {
+    color = DEBUG_DEFAULT_COLOR,
+    points = {},
+    lines = {},
+    arrows = {},
+    rects = {},
+    text = {}
+}
+
+-- types of things to draw: points/circles, arrows, lines, rect, text
+
+function debug.point(x, y)
+    add(debug.points, { x, y, debug.color })
+end
+function debug.sprite_point(x, y)
+    debug.point(x * 8 + 3, y * 8 + 3)
+end
+
+function debug.line(x, y, x2, y2)
+    add(debug.lines, { x, y, x2, y2, debug.color })
+end
+function debug.arrow(x, y, x2, y2)
+    add(debug.arrows, { x, y, x2, y2, debug.color })
+end
+function debug.rect(x, y, x2, y2)
+    add(debug.rects, { x, y, x2, y2, debug.color })
+end
+function debug.print(text, x, y)
+    add(debug.text, { text, x, y, debug.color })
+end
+
+function debug.draw()
+    for p in all(debug.points) do
+        circ(p[1], p[2], 1, p[3])
+    end
+    for l in all(debug.lines) do
+        line(l[1], l[2], l[3], l[4], l[5])
+    end
+    for a in all(debug.arrows) do
+        line(a[1], a[2], a[3], a[4], a[5])
+        circ(a[3], a[4], 2, a[5])
+    end
+    for r in all(debug.rects) do
+        rect(r[1], r[2], r[3], r[4], r[5])
+    end
+    for t in all(debug.text) do
+        print(t[1], t[2], t[3], t[4])
+    end
+    debug.points = {}
+    debug.lines = {}
+    debug.arrows = {}
+    debug.rects = {}
+    debug.text = {}
+end
+end
 package._c["vector"]=function()
 Vector = {
     x = 0, y = 0
@@ -42,7 +100,7 @@ function distance2(pos1, pos2)
     return abs(pos1.x - pos2.x) ^ 2 + abs(pos1.y - pos2.y) ^ 2
 end
 
-function Vector:__add(pos1, pos2)
+function Vector.__add(pos1, pos2)
     return Vector:new(pos1.x + pos2.x or pos2[1], pos1.y + pos2.y or pos2[2])
 end
 
@@ -146,6 +204,7 @@ package._c["character"]=function()
 --[[$const]] SHOOT_DURATION = 0.5
 
 Character = {
+	speed = 0,
 	dx = 0,
 	dy = 0,
 	state = STATE_STANDING,
@@ -252,16 +311,15 @@ function Character:check_mobility()
 		return
 	end
 	-- Get surroundings
-	local self_pos = self:get_tile()
-	local self_tile = mget(self_pos:unpack())
+	local self_tile = mget(self.map_pos:unpack())
 	local below_pos = self:get_floor()
 	local below_tile = mget(below_pos:unpack())
 	local above_pos = self:get_ceiling()
 	local above_tile = mget(above_pos:unpack())
 	local left_pos = self:get_left()
-	local left_tile = mget(self_pos.x - 1, self_pos.y)
+	local left_tile = mget(self.map_pos.x - 1, self.map_pos.y)
 	local right_pos = self:get_right()
-	local right_tile = mget(self_pos.x + 1, self_pos.y)
+	local right_tile = mget(self.map_pos.x + 1, self.map_pos.y)
 
 	local touching_ladder = self_tile == LADDER_TILE or below_tile == LADDER_TILE
 	local grounded = self:check_grounded()
@@ -295,7 +353,7 @@ function Character:check_mobility()
 	end
 
 	self.left_allowed = not fget(mget(left_pos:unpack()), COLLISION_FLAG) and not (left_pos.x < level.mapX)
-	self.right_allowed = not fget(mget(right_pos:unpack()), COLLISION_FLAG) and not (right_pos.x > level.mapX + 16)
+	self.right_allowed = not fget(mget(right_pos:unpack()), COLLISION_FLAG) and not (right_pos.x > level.mapX + 15)
 
 	self.shoot_left_allowed = mget(self:get_floor_left():unpack()) == BRICK_TILE and not fget(left_tile, BLOCK_ZAP_FLAG)
 	self.shoot_right_allowed = mget(self:get_floor_right():unpack()) == BRICK_TILE and not fget(right_tile, BLOCK_ZAP_FLAG)
@@ -330,16 +388,16 @@ function Character:update_movement()
 	else
 		if self.dx != 0 or self.state == STATE_SHOOTING then
 			if self.position.y % 8 >= 4 then
-				self.dy = min(self.position.y % 8, SPEED)
+				self.dy = min(self.position.y % 8, self.speed)
 			else
-				self.dy = max(-(self.position.y % 8), -SPEED)
+				self.dy = max(-(self.position.y % 8), -self.speed)
 			end
 		end
 		if self.dy != 0 or self.state == STATE_FALLING or self.state == STATE_SHOOTING then
 			if self.position.x % 8 >= 4 then
-				self.dx = min(self.position.x % 8, SPEED)
+				self.dx = min(self.position.x % 8, self.speed)
 			else
-				self.dx = max(-(self.position.x % 8), -SPEED)
+				self.dx = max(-(self.position.x % 8), -self.speed)
 			end
 		end
 	end
@@ -349,7 +407,7 @@ function Character:update_movement()
 	self.position.y += self.dy
 
 	if self.state == STATE_FALLING then
-		self.position.y += GRAVITY
+		self.position.y += self.speed
 	end
 	if self:check_grounded() then
 		self.position.y = flr(self.position.y / 8) * 8
@@ -378,6 +436,7 @@ function Character:change_state(new_state)
 end
 
 function Character:update()
+	self.map_pos = self:get_tile()
 	self:check_mobility()
 	self:get_input()
 	self:update_movement()
@@ -401,10 +460,10 @@ function Player:get_input()
 			if self.left_allowed and btn(0) then
 				-- left
 				self.facing_left = true
-				self.dx = -SPEED
+				self.dx = -self.speed
 			elseif self.right_allowed and btn(1) then
 				--right
-				self.dx = SPEED
+				self.dx = self.speed
 				self.facing_left = false
 			end
 		end
@@ -414,11 +473,11 @@ function Player:get_input()
 			if self.up_allowed and btn(2) then
 				-- up
 				self.dx = 0
-				self.dy = -SPEED
+				self.dy = -self.speed
 			elseif self.down_allowed and btn(3) then
 				-- down
 				self.dx = 0
-				self.dy = SPEED
+				self.dy = self.speed
 			end
 		end
 
@@ -447,20 +506,18 @@ function Player:get_input()
 end
 
 function Player:collide(other)
-	if manhattan_distance(self:get_tile(), other:get_tile()) <= 1 then
+	if manhattan_distance(self.map_pos, other.map_pos) <= 1 then
 		lose()
 	end
 end
 
 function Player:update()
-	self:check_mobility()
-	self:get_input()
-	self:update_movement()
+	Character.update(self)
 	-- game logic
-	local next_pos = self:get_tile()
+	local next_pos = self.map_pos
 	local next_tile = mget(next_pos:unpack())
 	if next_tile == GOLD_TILE and manhattan_distance(self.position:scale(1 / 8), next_pos) <= 0.25 then
-		self:get_gold(self:get_tile())
+		self:get_gold(self.map_pos)
 	end
 end
 
@@ -469,6 +526,7 @@ function Player:new()
 	setmetatable(instance, self)
 	instance.sprite = 1
 	instance.has_moved = false
+	instance.speed = SPEED
 	return instance
 end
 
@@ -500,6 +558,7 @@ function Enemy:new(name)
     setmetatable(instance, self)
     instance.sprite = 49
     instance.name = name
+    instance.speed = ENEMY_SPEED
     return instance
 end
 
@@ -525,9 +584,9 @@ function Enemy:get_input()
     -- Rule 1: get player if on same level
     if abs(player.position.y - self.position.y) <= 4 and self:check_path_to_player() then
         if self.position.x - player.position.x > 0 and self.left_allowed then
-            self.dx = -SPEED
+            self.dx = -self.speed
         elseif self.position.x - player.position.x < 0 and self.right_allowed then
-            self.dx = SPEED
+            self.dx = self.speed
         end
     end
     if self.dx > 0 then
@@ -546,6 +605,8 @@ package._c["level"]=function()
 --[[$const]] SHIMMY_TILE = 22
 --[[$const]] BRICK_TILE = 33
 --[[$const]] ONE_WAY_BRICK = 18
+--[[$const]] KEY_TILE = 28
+--[[$const]] DOOR_TILE = 27
 
 Level = {
     mapX = 0,
@@ -1001,8 +1062,8 @@ if (l[p]==nil) l[p]=true
 return l[p]
 end
 -- settings
---[[$const]] SPEED = 1
---[[$const]] GRAVITY = SPEED
+--[[$const]] SPEED = 1.2
+--[[$const]] ENEMY_SPEED = SPEED * 0.56
 --[[$const]] ANIMATION_RATE = 4
 -- brick lifecycle
 --[[$const]] BRICK_END = 90
@@ -1017,6 +1078,7 @@ end
 --[[$const]] DIE_SOUND = 61
 --[[$const]] ENEMY_DIE_SOUND = 60
 
+require("debug/gizmos")
 require("vector")
 require("utilities")
 require("aabb")
@@ -1092,12 +1154,12 @@ function _init()
 	set_palette(0)
 	show_main_menu()
 	-- 142 is the O key
-	menuitem(1, "🅾️ digs right", swap_controls)
+	menuitem(1, "🅾️ digs left", swap_controls)
 end
 
 function swap_controls()
 	swapped_controls = not swapped_controls
-	menuitem(1, "🅾️ digs left", swap_controls)
+	menuitem(1, "🅾️ digs right", swap_controls)
 end
 
 function show_main_menu()
@@ -1184,6 +1246,7 @@ function _draw()
 		effects:draw(level.mapX * 8, level.mapY * 8)
 	end
 	gui:draw()
+	debug.draw()
 end
 __gfx__
 000000001f5555ff1f5555ff1f5555ff1f5555ff1f5555ff1f5555f11f5555f1ffffffffffffffff1f5555f1ff5555ffffff5fff000000000000000000000000
