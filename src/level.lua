@@ -1,10 +1,10 @@
 -- tiles/sprites
 --[[$const]] GOLD_TILE = 24
---[[$const]] PLAYER_START_TILE = 25
---[[$const]] ENEMY_SPAWN_TILE = 26
+--[[$const]] PLAYER_START_TILE = 1
+--[[$const]] ENEMY_SPAWN_TILE = 49
 --[[$const]] LADDER_TILE = 20
 --[[$const]] SHIMMY_TILE = 22
---[[$const]] BRICK_TILE = 33
+--[[$const]] BRICK_TILE = 32
 --[[$const]] ONE_WAY_BRICK = 18
 --[[$const]] KEY_TILE = 28
 --[[$const]] DOOR_TILE = 27
@@ -123,7 +123,7 @@ function Level:update()
             -- Beginning
             if b[3] <= 5 then
                 mset(b[1], b[2], BRICK_TILE + b[3])
-            elseif b[3] >= (BRICK_END - 11) then
+            elseif b[3] >= (BRICK_END - 15) then
                 mset(b[1], b[2], BRICK_TILE + BRICK_END - b[3])
             end
 
