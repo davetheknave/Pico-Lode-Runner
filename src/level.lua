@@ -5,6 +5,7 @@
 --[[$const]] LADDER_TILE = 20
 --[[$const]] SHIMMY_TILE = 22
 --[[$const]] BRICK_TILE = 32
+--[[$const]] BRICK_WARN = 44
 --[[$const]] ONE_WAY_BRICK = 18
 --[[$const]] KEY_TILE = 28
 --[[$const]] DOOR_TILE = 27
@@ -123,8 +124,10 @@ function Level:update()
             -- Beginning
             if b[3] <= 5 then
                 mset(b[1], b[2], BRICK_TILE + b[3])
-            elseif b[3] >= (BRICK_END - 15) then
+            elseif b[3] >= (BRICK_END - 11) then
                 mset(b[1], b[2], BRICK_TILE + BRICK_END - b[3])
+            elseif b[3] >= (BRICK_END - 11 - 30) then
+                mset(b[1], b[2], BRICK_WARN + (flr(b[3] / 2) % 4))
             end
 
             if b[3] >= BRICK_END then
